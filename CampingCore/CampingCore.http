@@ -1,0 +1,212 @@
+# =============================================================================
+# CampingCore API — colección HTTP (VS Code REST Client, Rider, etc.)
+# =============================================================================
+# Orden sugerido:
+#  1) Register (opcional) → 2) Login → copia "token" de la respuesta a @token
+#  3) Pega el token en @token abajo → 4) Prueba endpoints con Authorization
+# =============================================================================
+# Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
+@baseUrl  = https://localhost:7061
+@baseHttp = http://localhost:5106
+@token    = reemplaza_con_jwt_de_login
+@id       = 1
+@tripId   = 1
+@csId     = 1
+@reviewId = 1
+
+### --- Auth (público) ---------------------------------------------------------
+
+# Registro: crea usuario; luego inicia sesión con Login para obtener JWT.
+# @name @email @password
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Demo Usuario",
+  "email": "demo@example.com",
+  "password": "Cambialo123!"
+}
+
+###
+
+# Login: body con email y password. Respuesta incluye "token" (JWT).
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "Cambialo123!"
+}
+
+###
+
+### --- Users (Bearer) ---------------------------------------------------------
+
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{token}}
+
+###
+
+PUT {{baseUrl}}/api/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nuevo Nombre"
+}
+
+###
+
+### --- Campings (listado/detalles públicos; mutaciones Bearer) ----------------
+
+GET {{baseUrl}}/api/campsites
+
+###
+
+GET {{baseUrl}}/api/campsites/{{id}}
+
+###
+
+POST {{baseUrl}}/api/campsites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Camping Río",
+  "description": "Junto al río, parcelas amplias.",
+  "latitude": 9.934739,
+  "longitude": -84.087502,
+  "pricePerNight": 25.00,
+  "hasWater": true,
+  "hasElectricity": true
+}
+
+###
+
+PUT {{baseUrl}}/api/campsites/{{id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Camping Río (editado)",
+  "description": "Actualizado vía API",
+  "latitude": 9.934739,
+  "longitude": -84.087502,
+  "pricePerNight": 28.50,
+  "hasWater": true,
+  "hasElectricity": false
+}
+
+###
+
+DELETE {{baseUrl}}/api/campsites/{{id}}
+Authorization: Bearer {{token}}
+
+###
+
+### --- Reviews (GET anidado; PUT/DELETE en /api/reviews/{id}) ------------------
+
+GET {{baseUrl}}/api/campsites/{{csId}}/reviews
+
+###
+
+POST {{baseUrl}}/api/campsites/{{csId}}/reviews
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 5,
+  "comment": "Excelente lugar"
+}
+
+###
+
+PUT {{baseUrl}}/api/reviews/{{reviewId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "rating": 4,
+  "comment": "Muy bueno, un poco de ruido"
+}
+
+###
+
+DELETE {{baseUrl}}/api/reviews/{{reviewId}}
+Authorization: Bearer {{token}}
+
+###
+
+### --- Favoritos (Bearer) ------------------------------------------------------
+
+GET {{baseUrl}}/api/favorites
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/api/favorites/{{csId}}
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{baseUrl}}/api/favorites/{{csId}}
+Authorization: Bearer {{token}}
+
+###
+
+### --- Viajes (Bearer) ---------------------------------------------------------
+
+GET {{baseUrl}}/api/trips
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/api/trips/{{tripId}}
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/api/trips
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Verano 2026",
+  "startDate": "2026-07-01",
+  "endDate": "2026-07-10"
+}
+
+###
+
+POST {{baseUrl}}/api/trips/{{tripId}}/campsites/{{csId}}
+Authorization: Bearer {{token}}
+
+###
+
+PUT {{baseUrl}}/api/trips/{{tripId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Verano 2026 (ajustado)",
+  "startDate": "2026-07-02",
+  "endDate": "2026-07-12"
+}
+
+###
+
+DELETE {{baseUrl}}/api/trips/{{tripId}}/campsites/{{csId}}
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{baseUrl}}/api/trips/{{tripId}}
+Authorization: Bearer {{token}}
+
+###
+
+### --- OpenAPI (JSON) ---------------------------------------------------------
+# Misma app: en Development, Swagger UI en /swagger. JSON en /swagger/v1/swagger.json
+# En no-Development, activar "EnableSwagger": true en appsettings (demos; no en prod pública sin protección)
+
+GET {{baseUrl}}/swagger/v1/swagger.json

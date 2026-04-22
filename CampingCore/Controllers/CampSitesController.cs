@@ -1,0 +1,182 @@
+using CampingCore.Application.CampSites.Commands.CreateCampSite;
+using CampingCore.Application.CampSites.Commands.DeleteCampSite;
+using CampingCore.Application.CampSites.Commands.UpdateCampSite;
+using CampingCore.Application.CampSites.Queries.GetAllCampSites;
+using CampingCore.Application.CampSites.Queries.GetCampSiteById;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CampingCore.Controllers;
+
+/// <summary>
+/// Listado, detalle y CRUD de sitios de camping. Crear/editar/eliminar requieren JWT; el creador es <c>CreatedByUserId</c>.
+/// </summary>
+[Route("api/campsites")]
+public sealed class CampSitesController : ApiController
+{
+    public CampSitesController(ISender sender) : base(sender) { }
+
+    /// <summary>
+    /// Lista todos los sitios de camping.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> con la colección.</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<CampSiteResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetAllCampSitesQuery(), cancellationToken);
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Obtiene un sitio de camping por id.
+    /// </summary>
+    /// <param name="id">Identificador del sitio.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> con <see cref="CampSiteResponse"/>; <c>404</c> si no existe.</returns>
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(CampSiteResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetCampSiteByIdQuery(id), cancellationToken);
+
+        if (result.IsFailure)
+            return NotFound(result.Error);
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Crea un sitio de camping. El creador queda fijado al usuario del JWT.
+    /// </summary>
+    /// <param name="request">Datos del sitio.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Create(
+        [FromBody] CreateCampSiteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new CreateCampSiteCommand(
+            request.Name,
+            request.Description,
+            request.Latitude,
+            request.Longitude,
+            request.PricePerNight,
+            request.HasWater,
+            request.HasElectricity,
+            GetCurrentUserId());
+
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return BadRequest(result.Error);
+
+        return CreatedAtAction(nameof(GetById), new { id = result.Value }, new { id = result.Value });
+    }
+
+    /// <summary>
+    /// Actualiza un sitio. Solo el creador (<c>CreatedByUserId</c>) puede modificar.
+    /// </summary>
+    /// <param name="id">Identificador del sitio.</param>
+    /// <param name="request">Nuevos datos.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> sin cuerpo; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
+    [HttpPut("{id:int}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] UpdateCampSiteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new UpdateCampSiteCommand(
+            id,
+            request.Name,
+            request.Description,
+            request.Latitude,
+            request.Longitude,
+            request.PricePerNight,
+            request.HasWater,
+            request.HasElectricity,
+            GetCurrentUserId());
+
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapError(result.Error);
+
+        return Ok();
+    }
+
+    /// <summary>
+    /// Elimina un sitio. Solo el creador puede eliminar.
+    /// </summary>
+    /// <param name="id">Identificador del sitio.</param>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>204</c> sin cuerpo; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
+    [HttpDelete("{id:int}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(
+            new DeleteCampSiteCommand(id, GetCurrentUserId()),
+            cancellationToken);
+
+        if (result.IsFailure)
+            return MapError(result.Error);
+
+        return NoContent();
+    }
+
+    private IActionResult MapError(Domain.Common.Error error) => error.Code switch
+    {
+        var c when c.EndsWith(".Forbidden") => Forbid(),
+        var c when c.EndsWith(".NotFound")  => NotFound(error),
+        _                                   => BadRequest(error)
+    };
+}
+
+/// <param name="Name">Nombre del sitio.</param>
+/// <param name="Description">Descripción opcional.</param>
+/// <param name="Latitude">Latitud (-90 a 90).</param>
+/// <param name="Longitude">Longitud (-180 a 180).</param>
+/// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
+/// <param name="HasWater">Indica agua en el sitio.</param>
+/// <param name="HasElectricity">Indica electricidad en el sitio.</param>
+public record UpdateCampSiteRequest(
+    string  Name,
+    string? Description,
+    decimal Latitude,
+    decimal Longitude,
+    decimal PricePerNight,
+    bool    HasWater,
+    bool    HasElectricity);
+
+/// <param name="Name">Nombre del sitio.</param>
+/// <param name="Description">Descripción opcional.</param>
+/// <param name="Latitude">Latitud (-90 a 90).</param>
+/// <param name="Longitude">Longitud (-180 a 180).</param>
+/// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
+/// <param name="HasWater">Indica agua en el sitio.</param>
+/// <param name="HasElectricity">Indica electricidad en el sitio.</param>
+public record CreateCampSiteRequest(
+    string  Name,
+    string? Description,
+    decimal Latitude,
+    decimal Longitude,
+    decimal PricePerNight,
+    bool    HasWater,
+    bool    HasElectricity);

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="CampingCore/CampingCore.csproj" />
+  <Project Path="CampingCore.Domain/CampingCore.Domain.csproj" />
+  <Project Path="CampingCore.Application/CampingCore.Application.csproj" />
+  <Project Path="CampingCore.Infrastructure/CampingCore.Infrastructure.csproj" />
+</Solution>
