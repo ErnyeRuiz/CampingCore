@@ -19,10 +19,10 @@ public class User
     public string PasswordHash { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
 
-    public IReadOnlyList<CampSite> CreatedCampSites { get; private set; } = [];
-    public IReadOnlyList<Review> Reviews { get; private set; } = [];
-    public IReadOnlyList<Favorite> Favorites { get; private set; } = [];
-    public IReadOnlyList<Trip> Trips { get; private set; } = [];
+    public ICollection<CampSite> CreatedCampSites { get; private set; } = new List<CampSite>();
+    public ICollection<Review> Reviews { get; private set; } = new List<Review>();
+    public ICollection<Favorite> Favorites { get; private set; } = new List<Favorite>();
+    public ICollection<Trip> Trips { get; private set; } = new List<Trip>();
 
     protected User() { }
 

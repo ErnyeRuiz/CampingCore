@@ -19,7 +19,7 @@ public class Trip
     public DateOnly EndDate { get; private set; }
 
     public User? User { get; private set; }
-    public IReadOnlyList<TripCampSite> CampSites { get; private set; } = [];
+    public ICollection<TripCampSite> CampSites { get; private set; } = new List<TripCampSite>();
 
     protected Trip() { }
 

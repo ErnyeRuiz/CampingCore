@@ -26,10 +26,10 @@ public class CampSite
     public DateTime CreatedAt { get; private set; }
 
     public User? CreatedByUser { get; private set; }
-    public IReadOnlyList<CampSiteImage> Images { get; private set; } = [];
-    public IReadOnlyList<Review> Reviews { get; private set; } = [];
-    public IReadOnlyList<Favorite> Favorites { get; private set; } = [];
-    public IReadOnlyList<TripCampSite> TripCampSites { get; private set; } = [];
+    public ICollection<CampSiteImage> Images { get; private set; } = new List<CampSiteImage>();
+    public ICollection<Review> Reviews { get; private set; } = new List<Review>();
+    public ICollection<Favorite> Favorites { get; private set; } = new List<Favorite>();
+    public ICollection<TripCampSite> TripCampSites { get; private set; } = new List<TripCampSite>();
 
     protected CampSite() { }
 

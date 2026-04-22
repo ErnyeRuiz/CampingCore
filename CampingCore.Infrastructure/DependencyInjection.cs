@@ -36,6 +36,21 @@ public static class DependencyInjection
         services.AddScoped<ITripCampSiteRepository, TripCampSiteRepository>();
 
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
+        if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
+        {
+            throw new InvalidOperationException(
+                $"Configure a non-empty {JwtSettings.SectionName}:{nameof(JwtSettings.SecretKey)} " +
+                "(e.g. appsettings.Development.json, User Secrets, or environment variable JwtSettings__SecretKey). " +
+                "HS256 requires at least 32 bytes of key material.");
+        }
+
+        var signingKeyBytes = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+        if (signingKeyBytes.Length < 32)
+        {
+            throw new InvalidOperationException(
+                $"{JwtSettings.SectionName}:{nameof(JwtSettings.SecretKey)} must be at least 32 UTF-8 bytes for HS256 (current: {signingKeyBytes.Length}).");
+        }
+
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, JwtTokenService>();
 
@@ -51,8 +66,7 @@ public static class DependencyInjection
                     ValidateIssuerSigningKey = true,
                     ValidIssuer              = jwtSettings.Issuer,
                     ValidAudience            = jwtSettings.Audience,
-                    IssuerSigningKey         = new SymmetricSecurityKey(
-                        Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+                    IssuerSigningKey         = new SymmetricSecurityKey(signingKeyBytes),
                 };
             });
 
