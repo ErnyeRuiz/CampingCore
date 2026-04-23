@@ -3,6 +3,7 @@ using CampingCore.Application.CampSites.Commands.DeleteCampSite;
 using CampingCore.Application.CampSites.Commands.UpdateCampSite;
 using CampingCore.Application.CampSites.Queries.GetAllCampSites;
 using CampingCore.Application.CampSites.Queries.GetCampSiteById;
+using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,11 +24,11 @@ public sealed class CampSitesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la colección.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<CampSiteResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CampSiteResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetAllCampSitesQuery(), cancellationToken);
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -37,16 +38,16 @@ public sealed class CampSitesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con <see cref="CampSiteResponse"/>; <c>404</c> si no existe.</returns>
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(CampSiteResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<CampSiteResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetCampSiteByIdQuery(id), cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -57,8 +58,8 @@ public sealed class CampSitesController : ApiController
     /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
         [FromBody] CreateCampSiteRequest request,
         CancellationToken cancellationToken)
@@ -76,9 +77,9 @@ public sealed class CampSitesController : ApiController
         var result = await Sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Value }, new { id = result.Value });
+        return CreatedResponse(nameof(GetById), new { id = result.Value }, new { id = result.Value });
     }
 
     /// <summary>
@@ -87,13 +88,13 @@ public sealed class CampSitesController : ApiController
     /// <param name="id">Identificador del sitio.</param>
     /// <param name="request">Nuevos datos.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> sin cuerpo; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
     [HttpPut("{id:int}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateCampSiteRequest request,
@@ -113,9 +114,9 @@ public sealed class CampSitesController : ApiController
         var result = await Sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok();
+        return SuccessResponse("Sitio de camping actualizado exitosamente.");
     }
 
     /// <summary>
@@ -123,12 +124,12 @@ public sealed class CampSitesController : ApiController
     /// </summary>
     /// <param name="id">Identificador del sitio.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>204</c> sin cuerpo; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
     [HttpDelete("{id:int}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(
@@ -136,17 +137,10 @@ public sealed class CampSitesController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return NoContent();
+        return SuccessResponse("Sitio de camping eliminado exitosamente.");
     }
-
-    private IActionResult MapError(Domain.Common.Error error) => error.Code switch
-    {
-        var c when c.EndsWith(".Forbidden") => Forbid(),
-        var c when c.EndsWith(".NotFound")  => NotFound(error),
-        _                                   => BadRequest(error)
-    };
 }
 
 /// <param name="Name">Nombre del sitio.</param>

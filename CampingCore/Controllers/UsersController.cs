@@ -1,5 +1,6 @@
 using CampingCore.Application.Users.Commands.UpdateUser;
 using CampingCore.Application.Users.Queries.GetUserById;
+using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,16 +22,16 @@ public sealed class UsersController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con <see cref="UserResponse"/>; <c>404</c> si el usuario no existe.</returns>
     [HttpGet("me")]
-    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetUserByIdQuery(GetCurrentUserId()), cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -38,11 +39,11 @@ public sealed class UsersController : ApiController
     /// </summary>
     /// <param name="request">Nuevo <c>name</c> mostrable.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> sin cuerpo; <c>404</c> si el usuario no existe.</returns>
+    /// <returns><c>200</c> con envelope; <c>400/404</c> si validación o usuario no existe.</returns>
     [HttpPut("me")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateMe(
         [FromBody] UpdateUserRequest request,
         CancellationToken cancellationToken)
@@ -52,9 +53,9 @@ public sealed class UsersController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok();
+        return SuccessResponse("Perfil actualizado exitosamente.");
     }
 }
 

@@ -5,6 +5,7 @@ using CampingCore.Application.Trips.Commands.RemoveCampSiteFromTrip;
 using CampingCore.Application.Trips.Commands.UpdateTrip;
 using CampingCore.Application.Trips.Queries.GetTripById;
 using CampingCore.Application.Trips.Queries.GetTripsByUser;
+using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,11 +27,11 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la colección.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<TripResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<TripResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyTrips(CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetTripsByUserQuery(GetCurrentUserId()), cancellationToken);
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -40,16 +41,16 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con <see cref="TripResponse"/>; <c>404</c> si no existe.</returns>
     [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(TripResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<TripResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetTripByIdQuery(id), cancellationToken);
 
         if (result.IsFailure)
-            return NotFound(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -59,8 +60,8 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
         [FromBody] CreateTripRequest request,
         CancellationToken cancellationToken)
@@ -74,9 +75,9 @@ public sealed class TripsController : ApiController
         var result = await Sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Value }, new { id = result.Value });
+        return CreatedResponse(nameof(GetById), new { id = result.Value }, new { id = result.Value });
     }
 
     /// <summary>
@@ -87,8 +88,8 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con id de la fila de unión; <c>400</c> en conflicto o validación.</returns>
     [HttpPost("{tripId:int}/campsites/{campSiteId:int}")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddCampSite(
         int tripId,
         int campSiteId,
@@ -99,9 +100,10 @@ public sealed class TripsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Created(string.Empty, new { id = result.Value });
+        return StatusCode(StatusCodes.Status201Created,
+            ApiResponse.Success(new { id = result.Value }, 201, "Sitio añadido al viaje exitosamente."));
     }
 
     /// <summary>
@@ -110,12 +112,12 @@ public sealed class TripsController : ApiController
     /// <param name="id">Id del viaje.</param>
     /// <param name="request">Nuevos datos.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> sin cuerpo; <c>403</c> no propietario; <c>404</c> no encontrado.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> no propietario; <c>404</c> no encontrado.</returns>
     [HttpPut("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateTripRequest request,
@@ -126,9 +128,9 @@ public sealed class TripsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok();
+        return SuccessResponse("Viaje actualizado exitosamente.");
     }
 
     /// <summary>
@@ -136,11 +138,11 @@ public sealed class TripsController : ApiController
     /// </summary>
     /// <param name="id">Id del viaje.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>204</c> sin cuerpo; <c>403</c> o <c>404</c>.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> o <c>404</c>.</returns>
     [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(
@@ -148,9 +150,9 @@ public sealed class TripsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return NoContent();
+        return SuccessResponse("Viaje eliminado exitosamente.");
     }
 
     /// <summary>
@@ -159,12 +161,12 @@ public sealed class TripsController : ApiController
     /// <param name="tripId">Id del viaje.</param>
     /// <param name="campSiteId">Id del sitio a quitar del viaje.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>204</c> sin cuerpo; <c>400</c> si el enlace no existía; <c>403/404</c> según caso.</returns>
+    /// <returns><c>200</c> con envelope; <c>400</c> si el enlace no existía; <c>403/404</c> según caso.</returns>
     [HttpDelete("{tripId:int}/campsites/{campSiteId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveCampSite(
         int tripId,
         int campSiteId,
@@ -175,17 +177,10 @@ public sealed class TripsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return NoContent();
+        return SuccessResponse("Sitio eliminado del viaje exitosamente.");
     }
-
-    private IActionResult MapError(Domain.Common.Error error) => error.Code switch
-    {
-        var c when c.EndsWith(".Forbidden") => Forbid(),
-        var c when c.EndsWith(".NotFound")  => NotFound(error),
-        _                                   => BadRequest(error)
-    };
 }
 
 /// <param name="Name">Nombre del viaje.</param>
