@@ -10,4 +10,8 @@ public record CreateCampSiteCommand(
     decimal PricePerNight,
     bool HasWater,
     bool HasElectricity,
-    int CreatedByUserId) : ICommand<int>;
+    int CreatedByUserId,
+    int IdProvincia,
+    int IdCanton,
+    int IdDistrito,
+    string? DireccionExacta) : ICommand<int>;

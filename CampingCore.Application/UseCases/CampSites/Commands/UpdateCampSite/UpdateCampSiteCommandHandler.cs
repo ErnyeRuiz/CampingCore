@@ -36,7 +36,11 @@ internal sealed class UpdateCampSiteCommandHandler : ICommandHandler<UpdateCampS
             request.Longitude,
             request.PricePerNight,
             request.HasWater,
-            request.HasElectricity);
+            request.HasElectricity,
+            request.IdProvincia,
+            request.IdCanton,
+            request.IdDistrito,
+            request.DireccionExacta);
 
         if (result.IsFailure)
             return result;

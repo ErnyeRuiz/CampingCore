@@ -36,7 +36,11 @@ internal sealed class CreateCampSiteCommandHandler : ICommandHandler<CreateCampS
             request.PricePerNight,
             request.HasWater,
             request.HasElectricity,
-            request.CreatedByUserId);
+            request.CreatedByUserId,
+            request.IdProvincia,
+            request.IdCanton,
+            request.IdDistrito,
+            request.DireccionExacta);
 
         if (result.IsFailure)
             return Result.Failure<int>(result.Error);

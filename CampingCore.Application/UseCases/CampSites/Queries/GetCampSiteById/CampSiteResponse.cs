@@ -10,4 +10,9 @@ public record CampSiteResponse(
     bool HasWater,
     bool HasElectricity,
     int CreatedByUserId,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    decimal Rating,
+    int IdProvincia,
+    int IdCanton,
+    int IdDistrito,
+    string? DireccionExacta);

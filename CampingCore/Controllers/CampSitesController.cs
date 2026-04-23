@@ -72,7 +72,11 @@ public sealed class CampSitesController : ApiController
             request.PricePerNight,
             request.HasWater,
             request.HasElectricity,
-            GetCurrentUserId());
+            GetCurrentUserId(),
+            request.IdProvincia,
+            request.IdCanton,
+            request.IdDistrito,
+            request.DireccionExacta);
 
         var result = await Sender.Send(command, cancellationToken);
 
@@ -109,7 +113,11 @@ public sealed class CampSitesController : ApiController
             request.PricePerNight,
             request.HasWater,
             request.HasElectricity,
-            GetCurrentUserId());
+            GetCurrentUserId(),
+            request.IdProvincia,
+            request.IdCanton,
+            request.IdDistrito,
+            request.DireccionExacta);
 
         var result = await Sender.Send(command, cancellationToken);
 
@@ -150,6 +158,10 @@ public sealed class CampSitesController : ApiController
 /// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
 /// <param name="HasWater">Indica agua en el sitio.</param>
 /// <param name="HasElectricity">Indica electricidad en el sitio.</param>
+/// <param name="IdProvincia">Identificador de provincia.</param>
+/// <param name="IdCanton">Identificador de cantón.</param>
+/// <param name="IdDistrito">Identificador de distrito.</param>
+/// <param name="DireccionExacta">Otras señas / dirección exacta (opcional).</param>
 public record UpdateCampSiteRequest(
     string  Name,
     string? Description,
@@ -157,7 +169,11 @@ public record UpdateCampSiteRequest(
     decimal Longitude,
     decimal PricePerNight,
     bool    HasWater,
-    bool    HasElectricity);
+    bool    HasElectricity,
+    int     IdProvincia,
+    int     IdCanton,
+    int     IdDistrito,
+    string? DireccionExacta);
 
 /// <param name="Name">Nombre del sitio.</param>
 /// <param name="Description">Descripción opcional.</param>
@@ -166,6 +182,10 @@ public record UpdateCampSiteRequest(
 /// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
 /// <param name="HasWater">Indica agua en el sitio.</param>
 /// <param name="HasElectricity">Indica electricidad en el sitio.</param>
+/// <param name="IdProvincia">Identificador de provincia.</param>
+/// <param name="IdCanton">Identificador de cantón.</param>
+/// <param name="IdDistrito">Identificador de distrito.</param>
+/// <param name="DireccionExacta">Otras señas / dirección exacta (opcional).</param>
 public record CreateCampSiteRequest(
     string  Name,
     string? Description,
@@ -173,4 +193,8 @@ public record CreateCampSiteRequest(
     decimal Longitude,
     decimal PricePerNight,
     bool    HasWater,
-    bool    HasElectricity);
+    bool    HasElectricity,
+    int     IdProvincia,
+    int     IdCanton,
+    int     IdDistrito,
+    string? DireccionExacta);

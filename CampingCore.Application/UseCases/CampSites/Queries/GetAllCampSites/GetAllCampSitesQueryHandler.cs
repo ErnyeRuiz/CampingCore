@@ -11,7 +11,9 @@ internal sealed class GetAllCampSitesQueryHandler : IQueryHandler<GetAllCampSite
     private readonly ICampSiteRepository _campSiteRepository;
     private readonly IMapper _mapper;
 
-    public GetAllCampSitesQueryHandler(ICampSiteRepository campSiteRepository, IMapper mapper)
+    public GetAllCampSitesQueryHandler(
+        ICampSiteRepository campSiteRepository, 
+        IMapper mapper)
     {
         _campSiteRepository = campSiteRepository;
         _mapper = mapper;
@@ -21,6 +23,6 @@ internal sealed class GetAllCampSitesQueryHandler : IQueryHandler<GetAllCampSite
     {
         var campSites = await _campSiteRepository.GetAllAsync(cancellationToken);
 
-        return Result.Success<IReadOnlyList<CampSiteResponse>>(_mapper.Map<IReadOnlyList<CampSiteResponse>>(campSites));
+        return Result.Success(_mapper.Map<IReadOnlyList<CampSiteResponse>>(campSites));
     }
 }

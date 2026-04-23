@@ -11,4 +11,8 @@ public record UpdateCampSiteCommand(
     decimal PricePerNight,
     bool    HasWater,
     bool    HasElectricity,
-    int     RequestingUserId) : ICommand;
+    int     RequestingUserId,
+    int     IdProvincia,
+    int     IdCanton,
+    int     IdDistrito,
+    string? DireccionExacta) : ICommand;

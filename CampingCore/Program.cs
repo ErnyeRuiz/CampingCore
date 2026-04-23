@@ -99,6 +99,7 @@ if (showSwagger)
 app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
+
 app.UseCors("AllowAngular");
 
 app.UseAuthentication();

@@ -18,5 +18,18 @@ public sealed class UpdateCampSiteCommandValidator : AbstractValidator<UpdateCam
 
         RuleFor(x => x.PricePerNight)
             .GreaterThan(0).WithMessage("El precio por noche debe ser mayor a 0.");
+
+        RuleFor(x => x.IdProvincia)
+            .GreaterThan(0).WithMessage("El identificador de provincia debe ser mayor a 0.");
+
+        RuleFor(x => x.IdCanton)
+            .GreaterThan(0).WithMessage("El identificador de cantón debe ser mayor a 0.");
+
+        RuleFor(x => x.IdDistrito)
+            .GreaterThan(0).WithMessage("El identificador de distrito debe ser mayor a 0.");
+
+        RuleFor(x => x.DireccionExacta)
+            .MaximumLength(500).WithMessage("La dirección exacta no puede superar 500 caracteres.")
+            .When(x => x.DireccionExacta is not null);
     }
 }
