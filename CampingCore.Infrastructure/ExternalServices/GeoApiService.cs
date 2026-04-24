@@ -22,6 +22,26 @@ internal sealed class GeoApiService : IGeoApiService
             ?? [];
     }
 
+    public async Task<IReadOnlyList<CantonDto>> GetCantonesAsync(CancellationToken cancellationToken = default)
+    {
+        var cantidadElementos = 100; // En Costa Rica hay un total de 84
+        var response = await _httpClient.GetFromJsonAsync<GeoApiResponse<CantonResponse>>(
+            $"cantones?limit={cantidadElementos}&page=1", cancellationToken);
+
+        return response?.Data.Select(c => new CantonDto(c.IdCanton, c.IdProvincia, c.Descripcion)).ToList()
+            ?? [];
+    }
+
+    public async Task<IReadOnlyList<DistritoDto>> GetDistritosAsync(CancellationToken cancellationToken = default)
+    {
+        var cantidadElementos = 500; // En Costa Rica hay un total de 488
+        var response = await _httpClient.GetFromJsonAsync<GeoApiResponse<DistritoResponse>>(
+            $"distritos?limit={cantidadElementos}&page=1", cancellationToken);
+
+        return response?.Data.Select(d => new DistritoDto(d.IdDistrito, d.IdCanton, d.Descripcion)).ToList()
+            ?? [];
+    }
+
     public async Task<IReadOnlyList<CantonDto>> GetCantonesByProvinciaAsync(int idProvincia, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetFromJsonAsync<GeoApiResponse<CantonResponse>>(

@@ -33,14 +33,40 @@ public sealed class UbicacionController : ApiController
     }
 
     /// <summary>
+    /// Retorna todos los cantones del pais.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> con la lista de cantones.</returns>
+    [HttpGet("cantones")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CantonDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCantones(CancellationToken cancellationToken)
+    {
+        var cantones = await _geoApi.GetCantonesAsync(cancellationToken);
+        return OkResponse(cantones);
+    }
+
+    /// <summary>
+    /// Retorna todos los distritos del pais.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> con la lista de distritos.</returns>
+    [HttpGet("distritos")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<DistritoDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetDistritos(CancellationToken cancellationToken)
+    {
+        var distritos = await _geoApi.GetDistritosAsync(cancellationToken);
+        return OkResponse(distritos);
+    }
+
+    /// <summary>
     /// Retorna los cantones de una provincia.
     /// </summary>
     /// <param name="idProvincia">Identificador de la provincia.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la lista de cantones.</returns>
-    [HttpGet("cantones")]
+    [HttpGet("provincias/{idProvincia:int}/cantones")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CantonDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCantones([FromQuery] int idProvincia, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCantonesByProvincia(int idProvincia, CancellationToken cancellationToken)
     {
         var cantones = await _geoApi.GetCantonesByProvinciaAsync(idProvincia, cancellationToken);
         return OkResponse(cantones);
@@ -52,9 +78,9 @@ public sealed class UbicacionController : ApiController
     /// <param name="idCanton">Identificador del cantón.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la lista de distritos.</returns>
-    [HttpGet("distritos")]
+    [HttpGet("cantones/{idCanton:int}/distritos")]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<DistritoDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetDistritos([FromQuery] int idCanton, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetDistritosByCanton(int idCanton, CancellationToken cancellationToken)
     {
         var distritos = await _geoApi.GetDistritosByCantonAsync(idCanton, cancellationToken);
         return OkResponse(distritos);

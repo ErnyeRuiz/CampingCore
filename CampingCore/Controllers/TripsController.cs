@@ -5,6 +5,7 @@ using CampingCore.Application.Trips.Commands.RemoveCampSiteFromTrip;
 using CampingCore.Application.Trips.Commands.UpdateTrip;
 using CampingCore.Application.Trips.Queries.GetTripById;
 using CampingCore.Application.Trips.Queries.GetTripsByUser;
+using CampingCore.Application.UseCases.Trips.Queries.GetTripById;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

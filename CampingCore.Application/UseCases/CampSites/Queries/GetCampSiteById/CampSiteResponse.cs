@@ -15,4 +15,5 @@ public record CampSiteResponse(
     int IdProvincia,
     int IdCanton,
     int IdDistrito,
-    string? DireccionExacta);
+    string? DireccionExacta,
+    IReadOnlyList<CampSiteImageResponse> Images);

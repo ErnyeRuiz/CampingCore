@@ -1,5 +1,6 @@
 using AutoMapper;
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.UseCases.Trips.Queries.GetTripById;
 using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Repositories;

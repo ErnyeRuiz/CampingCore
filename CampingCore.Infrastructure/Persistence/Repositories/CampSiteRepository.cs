@@ -9,6 +9,18 @@ internal sealed class CampSiteRepository : Repository<CampSite, int>, ICampSiteR
 {
     public CampSiteRepository(ApplicationDbContext context) : base(context) { }
 
+    public new async Task<CampSite?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        await Context.Set<CampSite>()
+            .AsSplitQuery()
+            .Include(c => c.Images)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+    public new async Task<IReadOnlyList<CampSite>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        await Context.Set<CampSite>()
+            .AsSplitQuery()
+            .Include(c => c.Images)
+            .ToListAsync(cancellationToken);
+
     public async Task RecalculateCampSiteRatingAsync(int campSiteId, CancellationToken cancellationToken = default)
     {
         var avg = await Context.Set<Review>()
