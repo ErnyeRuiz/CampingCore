@@ -31,10 +31,12 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IUserRepository,        UserRepository>();
-        services.AddScoped<ICampSiteRepository,     CampSiteRepository>();
-        services.AddScoped<IReviewRepository,       ReviewRepository>();
-        services.AddScoped<IFavoriteRepository,     FavoriteRepository>();
-        services.AddScoped<ITripRepository,         TripRepository>();
+        services.AddScoped<IRoleRepository,        RoleRepository>();
+        services.AddScoped<IPermissionRepository,  PermissionRepository>();
+        services.AddScoped<ICampSiteRepository,    CampSiteRepository>();
+        services.AddScoped<IReviewRepository,      ReviewRepository>();
+        services.AddScoped<IFavoriteRepository,    FavoriteRepository>();
+        services.AddScoped<ITripRepository,        TripRepository>();
         services.AddScoped<ITripCampSiteRepository, TripCampSiteRepository>();
 
         services.AddHttpClient<IGeoApiService, GeoApiService>(client =>

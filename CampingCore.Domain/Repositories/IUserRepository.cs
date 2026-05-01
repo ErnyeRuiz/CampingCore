@@ -5,7 +5,9 @@ namespace CampingCore.Domain.Repositories;
 public interface IUserRepository
 {
     Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<User?> GetByIdWithRoleAsync(int id, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+    Task<User?> GetByEmailWithRoleAsync(string email, CancellationToken cancellationToken = default);
     Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
     void Add(User user);
 }

@@ -16,13 +16,16 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
         _publisher = publisher;
     }
 
-    public DbSet<User>          Users          { get; set; }
-    public DbSet<CampSite>      CampSites      { get; set; }
-    public DbSet<CampSiteImage> CampSiteImages { get; set; }
-    public DbSet<Review>        Reviews        { get; set; }
-    public DbSet<Favorite>      Favorites      { get; set; }
-    public DbSet<Trip>          Trips          { get; set; }
-    public DbSet<TripCampSite>  TripCampSites  { get; set; }
+    public DbSet<User>           Users           { get; set; }
+    public DbSet<Role>           Roles           { get; set; }
+    public DbSet<Permission>     Permissions     { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
+    public DbSet<CampSite>       CampSites       { get; set; }
+    public DbSet<CampSiteImage>  CampSiteImages  { get; set; }
+    public DbSet<Review>         Reviews         { get; set; }
+    public DbSet<Favorite>       Favorites       { get; set; }
+    public DbSet<Trip>           Trips           { get; set; }
+    public DbSet<TripCampSite>   TripCampSites   { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -19,13 +19,21 @@ internal sealed class JwtTokenService : ITokenService
 
     public string GenerateToken(User user)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(JwtRegisteredClaimNames.Name,  user.Name),
             new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
         };
+
+        if (user.Role is not null)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, user.Role.Name));
+
+            foreach (var rp in user.Role.RolePermissions)
+                claims.Add(new Claim("permission", rp.Permission.Name));
+        }
 
         var key         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -21,13 +21,13 @@ internal sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginR
 
     public async Task<Result<LoginResponse>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        var user = await _userRepository.GetByEmailWithRoleAsync(request.Email, cancellationToken);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Result.Failure<LoginResponse>(InvalidCredentials);
 
         var token = _tokenService.GenerateToken(user);
 
-        return new LoginResponse(user.Id, user.Name, user.Email, token);
+        return new LoginResponse(user.Id, user.Name, user.Email, user.Role?.Name, token);
     }
 }
