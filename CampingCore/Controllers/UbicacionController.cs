@@ -33,7 +33,7 @@ public sealed class UbicacionController : ApiController
     }
 
     /// <summary>
-    /// Retorna todos los cantones del pais.
+    /// Retorna todos los cantones del país.
     /// </summary>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la lista de cantones.</returns>
@@ -46,7 +46,7 @@ public sealed class UbicacionController : ApiController
     }
 
     /// <summary>
-    /// Retorna todos los distritos del pais.
+    /// Retorna todos los distritos del país.
     /// </summary>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la lista de distritos.</returns>

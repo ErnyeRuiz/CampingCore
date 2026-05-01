@@ -20,7 +20,7 @@ public sealed class UsersController : ApiController
     /// Devuelve el perfil del usuario cuyo id coincide con el claim <c>sub</c> del JWT.
     /// </summary>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> con <see cref="UserResponse"/>; <c>404</c> si el usuario no existe.</returns>
+    /// <returns><c>200</c> con <see cref="UserResponse"/> (<c>id</c>, <c>name</c>, <c>email</c>, <c>createdAt</c>, <c>roleName</c>); <c>404</c> si no hay coincidencia con el token.</returns>
     [HttpGet("me")]
     [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

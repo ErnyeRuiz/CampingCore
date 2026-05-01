@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CampingCore.Controllers;
 
 /// <summary>
-/// Gestión de roles del sistema.
+/// Catálogo de roles y asignación de permisos. Requiere JWT; no hay políticas adicionales por rol más allá de un token válido.
 /// </summary>
 [Route("api/roles")]
 [Authorize]

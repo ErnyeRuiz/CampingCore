@@ -23,9 +23,13 @@ builder.Services.AddSwaggerGen(options =>
         Description = """
             API REST para descubrir y gestionar sitios de camping, reseñas, favoritos e itinerarios de viaje.
 
-            **Autenticación:** la mayoría de operaciones requieren un token JWT. Obténlo con `POST /api/auth/login` o regístrate con `POST /api/auth/register` y luego inicia sesión. En esta interfaz, pulsa *Authorize* e introduce: `Bearer {tu_token}`.
+            **Ubicación (Costa Rica):** `GET /api/ubicacion/…` expone provincias, cantones y distritos para rellenar `IdProvincia`, `IdCanton`, `IdDistrito` al crear o editar un camping.
 
-            **Convención de rutas:** prefijo `api/…`. Los recursos vinculados al usuario usan el identificador del token (claim `sub`).
+            **Autenticación:** muchas rutas exigen JWT. Registro: `POST /api/auth/register` asigna el rol `Customer` si existe en base de datos; luego `POST /api/auth/login`. El cuerpo de login incluye `userId`, `name`, `email`, `roleName` y `token`. Pulsa *Authorize* y usa `Bearer {token}`. Los claims incluyen `sub` (id de usuario), rol (`role`/`ClaimTypes.Role`) y uno o más claims `permission` con el nombre del permiso.
+
+            **Roles y permisos (REST):** `api/roles` y `api/permissions` exponen CRUD de catálogo; `PUT /api/roles/{id}/permissions` reemplaza por completo la lista de IDs de permisos del rol. Requieren JWT válido.
+
+            **Convención de rutas:** prefijo `api/…`. Donde aplique, el usuario se infiere del claim `sub` del token.
 
             **Swagger en no-desarrollo:** se puede activar con la clave de configuración `EnableSwagger: true` en `appsettings` (útil en demos; no se recomienda en producción pública sin autenticación adicional en el propio endpoint de documentación).
             """,
@@ -44,7 +48,7 @@ builder.Services.AddSwaggerGen(options =>
     var securityScheme = new OpenApiSecurityScheme
     {
         Name         = "Authorization",
-        Description  = "JWT Bearer. Formato: `Bearer {token}` (obtenido de POST /api/auth/login).",
+        Description  = "JWT Bearer (POST /api/auth/login). Respuesta incluye campo `token` junto con `userId`, `name`, `email`, `roleName`. Formato aquí: `Bearer {token}`.",
         In           = ParameterLocation.Header,
         Type         = SecuritySchemeType.Http,
         Scheme       = "bearer",

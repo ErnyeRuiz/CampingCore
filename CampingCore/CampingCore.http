@@ -2,8 +2,11 @@
 # CampingCore API — colección HTTP (VS Code REST Client, Rider, etc.)
 # =============================================================================
 # Orden sugerido:
-#  1) Register (opcional) → 2) Login → copia "token" de la respuesta a @token
+#  1) Register (opcional) → 2) Login → copia los campos de la respuesta a @token
 #  3) Pega el token en @token abajo → 4) Prueba endpoints con Authorization
+# =============================================================================
+# Login devuelve: userId, name, email, roleName, token (JWT con claims role/permission si aplica)
+# Registrar sitio: obtener IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
 # =============================================================================
 # Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
 @baseUrl  = https://localhost:7061
@@ -13,11 +16,12 @@
 @tripId   = 1
 @csId     = 1
 @reviewId = 1
+@roleId   = 1
+@permissionId = 1
 
 ### --- Auth (público) ---------------------------------------------------------
 
-# Registro: crea usuario; luego inicia sesión con Login para obtener JWT.
-# @name @email @password
+# Registro: crea usuario con rol Customer (debe existir en BD); luego login para JWT.
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
@@ -29,7 +33,7 @@ Content-Type: application/json
 
 ###
 
-# Login: body con email y password. Respuesta incluye "token" (JWT).
+# Login: body con email y password. Respuesta: userId, name, email, roleName, token.
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -37,6 +41,30 @@ Content-Type: application/json
   "email": "demo@example.com",
   "password": "Cambialo123!"
 }
+
+###
+
+### --- Ubicación (público) — datos para alta/edición de campings -------------
+
+GET {{baseUrl}}/api/ubicacion/provincias
+
+###
+
+GET {{baseUrl}}/api/ubicacion/cantones
+
+###
+
+GET {{baseUrl}}/api/ubicacion/distritos
+
+###
+
+# Cantones filtrados por provincia (sustituir por id válido desde provincias).
+GET {{baseUrl}}/api/ubicacion/provincias/1/cantones
+
+###
+
+# Distritos filtrados por cantón (sustituir por id válido desde cantones).
+GET {{baseUrl}}/api/ubicacion/cantones/1/distritos
 
 ###
 
@@ -57,7 +85,94 @@ Content-Type: application/json
 
 ###
 
-### --- Campings (listado/detalles públicos; mutaciones Bearer) ----------------
+### --- Roles / Permisos (Bearer; sin política por rol más allá de JWT válido) -
+
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/api/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/api/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ejemplo Rol",
+  "description": "Descripción opcional"
+}
+
+###
+
+PUT {{baseUrl}}/api/roles/{{roleId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ejemplo Rol (actualizado)",
+  "description": "Nueva descripción"
+}
+
+###
+
+# Reemplaza la lista completa de permisos del rol por los IDs enviados.
+PUT {{baseUrl}}/api/roles/{{roleId}}/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "permissionIds": [1, 2]
+}
+
+###
+
+DELETE {{baseUrl}}/api/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/api/permissions
+Authorization: Bearer {{token}}
+
+###
+
+GET {{baseUrl}}/api/permissions/{{permissionId}}
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/api/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ejemplo.Permission",
+  "description": "Descripción opcional"
+}
+
+###
+
+PUT {{baseUrl}}/api/permissions/{{permissionId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Ejemplo.Permission",
+  "description": "Actualizado"
+}
+
+###
+
+DELETE {{baseUrl}}/api/permissions/{{permissionId}}
+Authorization: Bearer {{token}}
+
+###
+
+### --- Campings (listado/detalles públicos; POST/PUT/DELETE Bearer) -----------
 
 GET {{baseUrl}}/api/campsites
 
@@ -67,6 +182,7 @@ GET {{baseUrl}}/api/campsites/{{id}}
 
 ###
 
+# Obligatorios: idProvincia, idCanton, idDistrito (> 0). Úsalos según ubicación.
 POST {{baseUrl}}/api/campsites
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -78,7 +194,11 @@ Content-Type: application/json
   "longitude": -84.087502,
   "pricePerNight": 25.00,
   "hasWater": true,
-  "hasElectricity": true
+  "hasElectricity": true,
+  "idProvincia": 1,
+  "idCanton": 1,
+  "idDistrito": 1,
+  "direccionExacta": "De la escuela 200 m al sur"
 }
 
 ###
@@ -94,7 +214,11 @@ Content-Type: application/json
   "longitude": -84.087502,
   "pricePerNight": 28.50,
   "hasWater": true,
-  "hasElectricity": false
+  "hasElectricity": false,
+  "idProvincia": 1,
+  "idCanton": 1,
+  "idDistrito": 1,
+  "direccionExacta": null
 }
 
 ###
@@ -161,6 +285,7 @@ Authorization: Bearer {{token}}
 
 ###
 
+# Cualquier usuario autenticado puede consultar un viaje por id si existe.
 GET {{baseUrl}}/api/trips/{{tripId}}
 Authorization: Bearer {{token}}
 
@@ -178,6 +303,7 @@ Content-Type: application/json
 
 ###
 
+# No comprueba propiedad del viaje: solo que existan viaje y camping y que no exista duplicado.
 POST {{baseUrl}}/api/trips/{{tripId}}/campsites/{{csId}}
 Authorization: Bearer {{token}}
 

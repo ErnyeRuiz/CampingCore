@@ -36,7 +36,7 @@ public sealed class TripsController : ApiController
     }
 
     /// <summary>
-    /// Obtiene un viaje por id (detalle, incl. campings vinculados según la query de aplicación).
+    /// Obtiene un viaje por id (detalle con campings vinculados). Cualquier usuario autenticado puede consultar por id si el viaje existe.
     /// </summary>
     /// <param name="id">Id del viaje.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
@@ -82,12 +82,12 @@ public sealed class TripsController : ApiController
     }
 
     /// <summary>
-    /// Añade un sitio al itinerario del viaje.
+    /// Añade un sitio al itinerario si el viaje y el camping existen y el enlace no está duplicado. No comprueba propiedad del viaje.
     /// </summary>
     /// <param name="tripId">Id del viaje.</param>
     /// <param name="campSiteId">Id del sitio a añadir.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>201</c> con id de la fila de unión; <c>400</c> en conflicto o validación.</returns>
+    /// <returns><c>201</c> con id del enlace trip–camping; <c>400</c> si ya estaba enlazado; <c>404</c> si viaje o sitio no existen.</returns>
     [HttpPost("{tripId:int}/campsites/{campSiteId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -162,7 +162,7 @@ public sealed class TripsController : ApiController
     /// <param name="tripId">Id del viaje.</param>
     /// <param name="campSiteId">Id del sitio a quitar del viaje.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> con envelope; <c>400</c> si el enlace no existía; <c>403/404</c> según caso.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> si no eres el propietario del viaje; <c>404</c> si el viaje no existe o el camping no forma parte del itinerario.</returns>
     [HttpDelete("{tripId:int}/campsites/{campSiteId:int}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]

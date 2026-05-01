@@ -15,11 +15,12 @@ public sealed class AuthController : ApiController
     public AuthController(ISender sender) : base(sender) { }
 
     /// <summary>
-    /// Crea un usuario y persiste su contraseña con hash. No inicia sesión: usa <c>POST /api/auth/login</c> para obtener el token.
+    /// Crea un usuario con contraseña hasheada y le asigna el rol <c>Customer</c> si está definido en el sistema.
+    /// No devuelve JWT: usa <c>POST /api/auth/login</c> después del registro.
     /// </summary>
     /// <param name="command">Cuerpo con <c>name</c>, <c>email</c> y <c>password</c> en texto claro (se hashea en servidor).</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>201</c> con <c>id</c> del usuario; <c>400</c> si el email ya existe o validación falla.</returns>
+    /// <returns><c>201</c> con <c>id</c> del usuario; <c>400</c> si el email ya existe, validación falla o falta el rol <c>Customer</c>.</returns>
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -36,7 +37,7 @@ public sealed class AuthController : ApiController
     }
 
     /// <summary>
-    /// Autentica por email y contraseña. Respuesta incluye <c>token</c> JWT.
+    /// Autentica por email y contraseña. Cuerpo de éxito: <c>userId</c>, <c>name</c>, <c>email</c>, <c>roleName</c> y <c>token</c> JWT (con rol y claims <c>permission</c> si aplica).
     /// </summary>
     /// <param name="command">Cuerpo con <c>email</c> y <c>password</c>.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
