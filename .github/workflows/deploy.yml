@@ -27,6 +27,9 @@ jobs:
       - name: Publish project
         run: dotnet publish ./CampingCore/CampingCore.csproj -c Release -o ./publish --no-build
 
+      - name: Create app_offline.htm
+        run: echo "Site is updating" > ./publish/app_offline.htm
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
