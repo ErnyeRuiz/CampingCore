@@ -1,9 +1,10 @@
-using System.Text;
+using CampingCore.Application.Email;
 using CampingCore.Application.Abstractions.Authentication;
-using CampingCore.Application.Abstractions.Security;
 using CampingCore.Application.Abstractions.Geo;
+using CampingCore.Application.Abstractions.Security;
 using CampingCore.Domain.Repositories;
 using CampingCore.Infrastructure.Authentication;
+using CampingCore.Infrastructure.Email;
 using CampingCore.Infrastructure.ExternalServices;
 using CampingCore.Infrastructure.Persistence;
 using CampingCore.Infrastructure.Persistence.Repositories;
@@ -12,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace CampingCore.Infrastructure;
 
@@ -58,6 +60,15 @@ public static class DependencyInjection
             throw new InvalidOperationException(
                 $"{JwtSettings.SectionName}:{nameof(JwtSettings.SecretKey)} must be at least 32 UTF-8 bytes for HS256 (current: {signingKeyBytes.Length}).");
         }
+
+        services.Configure<EmailBrandingOptions>(configuration.GetSection(EmailBrandingOptions.SectionName));
+        services.Configure<BrevoSettings>(configuration.GetSection(BrevoSettings.SectionName));
+        services.AddHttpClient<IEmailService, BrevoEmailService>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.brevo.com/");
+            client.DefaultRequestHeaders.Add("api-key", configuration["Brevo:ApiKey"]);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, JwtTokenService>();

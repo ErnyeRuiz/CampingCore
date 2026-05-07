@@ -1,8 +1,10 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Events;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class User
+public class User : AggregateRoot<int>
 {
     public static class Errors
     {
@@ -11,14 +13,18 @@ public class User
         public static readonly Error EmailRequired = Error.Validation("User.EmailRequired", "El email es obligatorio.");
         public static readonly Error EmailTooLong  = Error.Validation("User.EmailTooLong",  "El email no puede superar 255 caracteres.");
         public static readonly Error PasswordHashRequired = Error.Validation("User.PasswordHashRequired", "El hash de contraseña es obligatorio.");
+        public static readonly Error EmailAlreadyVerified = Error.Validation("User.EmailAlreadyVerified", "El email ya fue verificado.");
+        public static readonly Error InvalidOrExpiredVerificationCode = Error.Validation("User.InvalidOrExpiredCode", "El código de verificación es inválido o ha expirado.");
     }
 
-    public int Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
     public int RoleId { get; private set; }
+    public bool IsEmailVerified { get; private set; }
+    public string? EmailVerificationCode { get; private set; }
+    public DateTime? EmailVerificationCodeExpiresAt { get; private set; }
 
     public Role? Role { get; private set; }
     public ICollection<CampSite> CreatedCampSites { get; private set; } = new List<CampSite>();
@@ -26,9 +32,9 @@ public class User
     public ICollection<Favorite> Favorites { get; private set; } = new List<Favorite>();
     public ICollection<Trip> Trips { get; private set; } = new List<Trip>();
 
-    protected User() { }
+    protected User() : base(0) { }
 
-    private User(string name, string email, string passwordHash, int roleId)
+    private User(string name, string email, string passwordHash, int roleId) : base(0)
     {
         Name         = name;
         Email        = email;
@@ -47,6 +53,40 @@ public class User
         if (roleId <= 0)                              return Result.Failure<User>(Error.Validation("User.InvalidRoleId", "El identificador de rol debe ser mayor a 0."));
 
         return new User(name, email, passwordHash, roleId);
+    }
+
+    public void GenerateEmailVerificationCode(string code)
+    {
+        EmailVerificationCode = BCrypt.Net.BCrypt.HashPassword(code);
+        EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+
+        RaiseDomainEvent(new UserRegisteredDomainEvent(
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            Id,
+            Email,
+            Name,
+            code));
+    }
+
+    public Result VerifyEmail(string code)
+    {
+        if (IsEmailVerified)
+            return Result.Failure(Errors.EmailAlreadyVerified);
+
+        if (string.IsNullOrEmpty(EmailVerificationCode)
+            || EmailVerificationCodeExpiresAt is null
+            || DateTime.UtcNow > EmailVerificationCodeExpiresAt.Value)
+            return Result.Failure(Errors.InvalidOrExpiredVerificationCode);
+
+        if (!BCrypt.Net.BCrypt.Verify(code, EmailVerificationCode))
+            return Result.Failure(Errors.InvalidOrExpiredVerificationCode);
+
+        IsEmailVerified = true;
+        EmailVerificationCode = null;
+        EmailVerificationCodeExpiresAt = null;
+
+        return Result.Success();
     }
 
     public Result UpdateProfile(string name)

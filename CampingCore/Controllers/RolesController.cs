@@ -26,6 +26,7 @@ public sealed class RolesController : ApiController
     /// Retorna todos los roles con sus permisos asociados.
     /// </summary>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<RoleResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -37,6 +38,7 @@ public sealed class RolesController : ApiController
     /// Retorna un rol por su ID, incluidos los permisos asociados.
     /// </summary>
     [HttpGet("{id:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<RoleResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
@@ -53,6 +55,7 @@ public sealed class RolesController : ApiController
     /// Crea un nuevo rol.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateRoleCommand command, CancellationToken cancellationToken)
@@ -69,6 +72,7 @@ public sealed class RolesController : ApiController
     /// Actualiza nombre y descripción de un rol existente.
     /// </summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -86,6 +90,7 @@ public sealed class RolesController : ApiController
     /// Elimina un rol por su ID.
     /// </summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)

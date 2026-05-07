@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Role
+public class Role : Entity<int>
 {
     public static class Errors
     {
@@ -11,16 +12,15 @@ public class Role
         public static readonly Error NotFound     = Error.NotFound("Role.NotFound",        "El rol no fue encontrado.");
     }
 
-    public int Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     public ICollection<RolePermission> RolePermissions { get; private set; } = new List<RolePermission>();
 
-    protected Role() { }
+    protected Role() : base(0) { }
 
-    private Role(string name, string? description)
+    private Role(string name, string? description) : base(0)
     {
         Name        = name;
         Description = description;

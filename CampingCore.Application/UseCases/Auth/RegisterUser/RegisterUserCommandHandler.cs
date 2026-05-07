@@ -1,9 +1,11 @@
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.Users.Commands.RegisterUser;
 using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Repositories;
+using System.Diagnostics;
 
-namespace CampingCore.Application.Users.Commands.RegisterUser;
+namespace CampingCore.Application.UseCases.Auth.RegisterUser;
 
 internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, int>
 {
@@ -40,9 +42,14 @@ internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserC
         if (result.IsFailure)
             return Result.Failure<int>(result.Error);
 
-        _userRepository.Add(result.Value);
+        var user = result.Value;
+        _userRepository.Add(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result.Value.Id;
+        user.GenerateEmailVerificationCode(Random.Shared.Next(100000, 999999).ToString());
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return user.Id;
     }
 }

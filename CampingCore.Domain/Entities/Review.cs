@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Review
+public class Review : Entity<int>
 {
     public static class Errors
     {
@@ -11,7 +12,6 @@ public class Review
         public static readonly Error RatingOutOfRange  = Error.Validation("Review.RatingOutOfRange",  "La calificación debe estar entre 1 y 5.");
     }
 
-    public int Id { get; private set; }
     public int UserId { get; private set; }
     public int CampSiteId { get; private set; }
     public byte Rating { get; private set; }
@@ -21,9 +21,9 @@ public class Review
     public User? User { get; private set; }
     public CampSite? CampSite { get; private set; }
 
-    protected Review() { }
+    protected Review() : base(0) { }
 
-    private Review(int userId, int campSiteId, byte rating, string? comment)
+    private Review(int userId, int campSiteId, byte rating, string? comment) : base(0)
     {
         UserId = userId;
         CampSiteId = campSiteId;

@@ -2,8 +2,9 @@
 # CampingCore API — colección HTTP (VS Code REST Client, Rider, etc.)
 # =============================================================================
 # Orden sugerido:
-#  1) Register (opcional) → 2) Login → copia los campos de la respuesta a @token
-#  3) Pega el token en @token abajo → 4) Prueba endpoints con Authorization
+#  1) Register (opcional) → 2) Verify-email con id devuelto y código del correo (opcional según flujo)
+#  3) Login → copia el JWT a @token
+#  4) Prueba endpoints con Authorization
 # =============================================================================
 # Login devuelve: userId, name, email, roleName, token (JWT con claim role + claims permission según RolePermissions).
 # Roles / Permissions CRUD: solo JWT con rol SuperUser (403 si Customer u otro sin ese rol).
@@ -20,10 +21,12 @@
 @reviewId = 1
 @roleId   = 1
 @permissionId = 1
+@registeredUserId = 1
 
 ### --- Auth (público) ---------------------------------------------------------
 
-# Registro: crea usuario con rol Customer (debe existir en BD); luego login para JWT.
+# Registro: crea usuario con rol Customer (debe existir en BD); asigna verificación por correo (código 6 dígitos, ~15 min).
+# Respuesta 201: data incluye id de usuario — actualiza @registeredUserId arriba o edita el JSON tras registrar.
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
@@ -31,6 +34,17 @@ Content-Type: application/json
   "name": "Demo Usuario",
   "email": "demo@example.com",
   "password": "Cambialo123!"
+}
+
+###
+
+# Verificación de email: userId = id del registro; code = código recibido por correo (requiere IEmailService/Brevo activo).
+POST {{baseUrl}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "userId": {{registeredUserId}},
+  "code": "123456"
 }
 
 ###

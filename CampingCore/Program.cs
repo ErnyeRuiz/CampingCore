@@ -32,7 +32,7 @@ builder.Services.AddSwaggerGen(options =>
 
             **Ubicación (Costa Rica):** `GET /api/ubicacion/…` expone provincias, cantones y distritos para rellenar `IdProvincia`, `IdCanton`, `IdDistrito` al crear o editar un camping.
 
-            **Autenticación:** muchas rutas exigen JWT. Registro: `POST /api/auth/register` asigna el rol `Customer` si existe en base de datos; luego `POST /api/auth/login`. El cuerpo de login incluye `userId`, `name`, `email`, `roleName` y `token`. Pulsa *Authorize* y usa `Bearer {token}`. Los claims incluyen `sub` (id de usuario), rol (`role`/`ClaimTypes.Role`) y uno o más claims `permission` con el nombre del permiso.
+            **Autenticación:** muchas rutas exigen JWT. Registro: `POST /api/auth/register` asigna el rol `Customer` si existe en base de datos y genera un código de verificación enviado al email (`POST /api/auth/verify-email` con `userId` y `code` cuando el proveedor de correo está configurado). Después `POST /api/auth/login`. El cuerpo de login incluye `userId`, `name`, `email`, `roleName` y `token`. Pulsa *Authorize* y usa `Bearer {token}`. Los claims incluyen `sub` (id de usuario), rol (`role`/`ClaimTypes.Role`) y uno o más claims `permission` con el nombre del permiso.
 
             **Autorización por permiso:** crear/editar/eliminar campings (`POST`/`PUT`/`DELETE /api/campsites`) exigen políticas `Permission:create.campsite`, `Permission:update.campsite` y `Permission:delete.campsite` (claim `permission` en el JWT). El rol `SuperUser` satisface cualquier política `Permission:…` sin necesidad de esos claims.
 
@@ -115,6 +115,8 @@ if (showSwagger)
         c.DisplayRequestDuration();
     });
 }
+
+app.UseStaticFiles();
 
 app.UseExceptionHandler();
 

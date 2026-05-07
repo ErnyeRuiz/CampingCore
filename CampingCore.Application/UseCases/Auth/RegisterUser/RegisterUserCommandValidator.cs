@@ -1,6 +1,7 @@
+using CampingCore.Application.Users.Commands.RegisterUser;
 using FluentValidation;
 
-namespace CampingCore.Application.Users.Commands.RegisterUser;
+namespace CampingCore.Application.UseCases.Auth.RegisterUser;
 
 internal sealed class RegisterUserCommandValidator : AbstractValidator<RegisterUserCommand>
 {

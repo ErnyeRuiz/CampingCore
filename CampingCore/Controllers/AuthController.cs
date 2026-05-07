@@ -1,3 +1,4 @@
+using CampingCore.Application.UseCases.Auth.VerifyEmail;
 using CampingCore.Application.Users.Commands.Login;
 using CampingCore.Application.Users.Commands.RegisterUser;
 using CampingCore.Common;
@@ -34,6 +35,25 @@ public sealed class AuthController : ApiController
             return MapErrorResponse(result.Error);
 
         return CreatedResponse(nameof(Register), new { id = result.Value }, new { id = result.Value });
+    }
+
+    /// <summary>
+    /// Verifica el email del usuario con el código enviado por correo.
+    /// </summary>
+    [HttpPost("verify-email")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> VerifyEmail(
+        [FromBody] VerifyEmailCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapErrorResponse(result.Error);
+
+        return SuccessResponse("Email verificado correctamente.");
     }
 
     /// <summary>

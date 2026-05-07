@@ -1,10 +1,10 @@
 namespace CampingCore.Domain.Primitives;
 
-public abstract class AggregateRoot : Entity
+public abstract class AggregateRoot<TId> : Entity<TId>
 {
     private readonly List<IDomainEvent> _domainEvents = [];
 
-    protected AggregateRoot(Guid id) : base(id) { }
+    protected AggregateRoot(TId id) : base(id) { }
 
     public IReadOnlyList<IDomainEvent> GetDomainEvents() => _domainEvents.AsReadOnly();
 

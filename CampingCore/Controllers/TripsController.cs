@@ -28,6 +28,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la colección.</returns>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<TripResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyTrips(CancellationToken cancellationToken)
     {
@@ -42,6 +43,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con <see cref="TripResponse"/>; <c>404</c> si no existe.</returns>
     [HttpGet("{id:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<TripResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
@@ -61,6 +63,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
@@ -89,6 +92,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con id del enlace trip–camping; <c>400</c> si ya estaba enlazado; <c>404</c> si viaje o sitio no existen.</returns>
     [HttpPost("{tripId:int}/campsites/{campSiteId:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddCampSite(
@@ -115,6 +119,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> no propietario; <c>404</c> no encontrado.</returns>
     [HttpPut("{id:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
@@ -141,6 +146,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> o <c>404</c>.</returns>
     [HttpDelete("{id:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -164,6 +170,7 @@ public sealed class TripsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> si no eres el propietario del viaje; <c>404</c> si el viaje no existe o el camping no forma parte del itinerario.</returns>
     [HttpDelete("{tripId:int}/campsites/{campSiteId:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]

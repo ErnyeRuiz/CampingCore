@@ -21,4 +21,11 @@
     <ProjectReference Include="..\CampingCore.Infrastructure\CampingCore.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="wwwroot\images\dark_and_title.png" />
+    <None Include="wwwroot\images\only_dark.png" />
+    <None Include="wwwroot\images\light_and_title.png" />
+    <None Include="wwwroot\images\only_light.png" />
+  </ItemGroup>
+
 </Project>

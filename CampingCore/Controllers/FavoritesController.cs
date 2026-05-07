@@ -23,6 +23,7 @@ public sealed class FavoritesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la colección.</returns>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<FavoriteResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMyFavorites(CancellationToken cancellationToken)
     {
@@ -37,6 +38,7 @@ public sealed class FavoritesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con <c>id</c> del favorito; <c>400</c> si ya existía o datos inválidos.</returns>
     [HttpPost("{campSiteId:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Add(int campSiteId, CancellationToken cancellationToken)
@@ -59,6 +61,7 @@ public sealed class FavoritesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>400</c> si el favorito no existía.</returns>
     [HttpDelete("{campSiteId:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Remove(int campSiteId, CancellationToken cancellationToken)
