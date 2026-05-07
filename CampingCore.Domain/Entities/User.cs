@@ -58,4 +58,23 @@ public class User
 
         return Result.Success();
     }
+
+    /// <summary>
+    /// Actualiza datos del usuario por un administrador. Si <paramref name="passwordHash"/> es nulo o vacío, no se modifica la contraseña.
+    /// </summary>
+    public Result UpdateByAdmin(string name, string email, int roleId, string? passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(name))        return Result.Failure(Errors.NameRequired);
+        if (name.Length > 100)                       return Result.Failure(Errors.NameTooLong);
+        if (string.IsNullOrWhiteSpace(email))       return Result.Failure(Errors.EmailRequired);
+        if (email.Length > 255)                      return Result.Failure(Errors.EmailTooLong);
+        Name   = name;
+        Email  = email.Trim();
+        RoleId = roleId;
+
+        if (!string.IsNullOrWhiteSpace(passwordHash))
+            PasswordHash = passwordHash;
+
+        return Result.Success();
+    }
 }

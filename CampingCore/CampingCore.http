@@ -5,8 +5,10 @@
 #  1) Register (opcional) → 2) Login → copia los campos de la respuesta a @token
 #  3) Pega el token en @token abajo → 4) Prueba endpoints con Authorization
 # =============================================================================
-# Login devuelve: userId, name, email, roleName, token (JWT con claims role/permission si aplica)
-# Registrar sitio: obtener IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
+# Login devuelve: userId, name, email, roleName, token (JWT con claim role + claims permission según RolePermissions).
+# Roles / Permissions CRUD: solo JWT con rol SuperUser (403 si Customer u otro sin ese rol).
+# POST/PUT/DELETE campings: además del Bearer exigen permiso create.campsite / update.campsite / delete.campsite (o rol SuperUser, que bypass). PUT/DELETE: solo dueño salvo SuperUser.
+# Registrar camping nuevo: IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
 # =============================================================================
 # Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
 @baseUrl  = https://localhost:7061
@@ -70,6 +72,32 @@ GET {{baseUrl}}/api/ubicacion/cantones/1/distritos
 
 ### --- Users (Bearer) ---------------------------------------------------------
 
+# Directorio global: solo JWT con rol SuperUser (403 para otros).
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{token}}
+
+###
+
+# Detalle de usuario por id (SuperUser). Sustituir @id.
+GET {{baseUrl}}/api/users/{{id}}
+Authorization: Bearer {{token}}
+
+###
+
+# Actualizar usuario por id (SuperUser). password opcional (omitir para no cambiar).
+PUT {{baseUrl}}/api/users/{{id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nombre actualizado",
+  "email": "nuevo@example.com",
+  "roleId": 1,
+  "password": "NuevaClave123"
+}
+
+###
+
 GET {{baseUrl}}/api/users/me
 Authorization: Bearer {{token}}
 
@@ -85,7 +113,7 @@ Content-Type: application/json
 
 ###
 
-### --- Roles / Permisos (Bearer; sin política por rol más allá de JWT válido) -
+### --- Roles / Permisos (Bearer + rol SuperUser en JWT; otros roles → 403) -----
 
 GET {{baseUrl}}/api/roles
 Authorization: Bearer {{token}}
@@ -172,7 +200,7 @@ Authorization: Bearer {{token}}
 
 ###
 
-### --- Campings (listado/detalles públicos; POST/PUT/DELETE Bearer) -----------
+### --- Campings (GET público; GET /managed JWT Admin/SuperUser; POST/PUT/DELETE Bearer + Permission:* o SuperUser)
 
 GET {{baseUrl}}/api/campsites
 
@@ -182,6 +210,13 @@ GET {{baseUrl}}/api/campsites/{{id}}
 
 ###
 
+# Lista para panel admin: rol Admin → solo los creados por ese usuario; SuperUser → todos. Bearer obligatorio.
+GET {{baseUrl}}/api/campsites/managed
+Authorization: Bearer {{token}}
+
+###
+
+# Requiere permiso create.campsite en JWT (o rol SuperUser).
 # Cuerpo: multipart/form-data — campos escalares (PascalCase o camelCase) + opcional "images" (archivos).
 # Tras GET de detalle, los ids de imágenes están en la respuesta (CampSiteResponse.Images).
 POST {{baseUrl}}/api/campsites
@@ -241,7 +276,8 @@ Content-Type: image/jpeg
 
 ###
 
-# Update: mismo multipart + "imageIdsToKeep" repetido por cada id a conservar (vacío = quitar todas las fotos previas).
+# Update: permiso update.campsite (o SuperUser); solo el dueño del camping si no eres Super.
+# mismo multipart + "imageIdsToKeep" repetido por cada id a conservar (vacío = quitar todas las fotos previas).
 PUT {{baseUrl}}/api/campsites/{{id}}
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----CampingUpdateBoundary
@@ -294,6 +330,7 @@ Content-Disposition: form-data; name="imageIdsToKeep"
 
 ###
 
+# Permiso delete.campsite (o SuperUser); solo dueño si no eres Super.
 DELETE {{baseUrl}}/api/campsites/{{id}}
 Authorization: Bearer {{token}}
 

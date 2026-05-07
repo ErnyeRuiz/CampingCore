@@ -4,6 +4,7 @@ using CampingCore.Application.Permissions.Commands.DeletePermission;
 using CampingCore.Application.Permissions.Commands.UpdatePermission;
 using CampingCore.Application.Permissions.Queries.GetAllPermissions;
 using CampingCore.Application.Permissions.Queries.GetPermissionById;
+using CampingCore.Application.Security;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace CampingCore.Controllers;
 
 /// <summary>
-/// Catálogo de permisos. Requiere JWT; no hay políticas adicionales por rol más allá de un token válido.
+/// Catálogo de permisos. Solo el rol JWT <c>SuperUser</c> puede acceder a estas rutas.
 /// </summary>
 [Route("api/permissions")]
-[Authorize]
+[Authorize(Roles = AppRoles.SuperUser)]
 public sealed class PermissionsController : ApiController
 {
     public PermissionsController(ISender sender) : base(sender) { }

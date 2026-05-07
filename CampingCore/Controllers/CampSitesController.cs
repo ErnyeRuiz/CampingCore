@@ -1,7 +1,9 @@
 using CampingCore.Application.CampSites.Commands.DeleteCampSite;
 using CampingCore.Application.CampSites.Queries.GetAllCampSites;
 using CampingCore.Application.CampSites.Queries.GetCampSiteById;
+using CampingCore.Application.CampSites.Queries.GetManagedCampSites;
 using CampingCore.Application.CampSites;
+using CampingCore.Application.Security;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +14,7 @@ using CampingCore.Application.UseCases.CampSites.Commands.UpdateCampSite;
 namespace CampingCore.Controllers;
 
 /// <summary>
-/// Listado, detalle y CRUD de sitios de camping. Crear/editar/eliminar requieren JWT; el creador es <c>CreatedByUserId</c>.
+/// Listado y detalle públicos. <c>GET …/managed</c> es JWT + roles <c>Admin</c>/<c>SuperUser</c>. Crear/editar/eliminar exigen JWT, permisos <c>create/update/delete.campsite</c> (o rol <c>SuperUser</c>) y, salvo SuperUser, solo el dueño puede mutar sitios existentes.
 /// </summary>
 [Route("api/campsites")]
 public sealed class CampSitesController : ApiController
@@ -29,6 +31,21 @@ public sealed class CampSitesController : ApiController
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetAllCampSitesQuery(), cancellationToken);
+        return OkResponse(result.Value);
+    }
+
+    /// <summary>
+    /// Lista sitios para gestión: <c>Admin</c> solo los que creó; <c>SuperUser</c> todos. Requiere JWT.
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelación.</param>
+    /// <returns><c>200</c> con la colección; <c>403</c> si el rol no es <c>Admin</c> ni <c>SuperUser</c>.</returns>
+    [HttpGet("managed")]
+    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.SuperUser}")]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<CampSiteResponse>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetManaged(CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetManagedCampSitesQuery(), cancellationToken);
         return OkResponse(result.Value);
     }
 
@@ -59,7 +76,7 @@ public sealed class CampSitesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = AppPermissions.CreateCampSitePolicy)]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -102,7 +119,7 @@ public sealed class CampSitesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
     [HttpPut("{id:int}")]
-    [Authorize]
+    [Authorize(Policy = AppPermissions.UpdateCampSitePolicy)]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -148,7 +165,7 @@ public sealed class CampSitesController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
     [HttpDelete("{id:int}")]
-    [Authorize]
+    [Authorize(Policy = AppPermissions.DeleteCampSitePolicy)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

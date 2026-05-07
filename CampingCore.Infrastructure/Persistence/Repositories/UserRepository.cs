@@ -1,4 +1,5 @@
 using CampingCore.Domain.Entities;
+using CampingCore.Domain.ReadModels;
 using CampingCore.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,4 +28,28 @@ internal sealed class UserRepository : Repository<User, int>, IUserRepository
 
     public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         => await Context.Users.AnyAsync(u => u.Email == email, cancellationToken);
+
+    public async Task<bool> ExistsByEmailExceptUserIdAsync(
+        string email,
+        int excludeUserId,
+        CancellationToken cancellationToken = default)
+        => await Context.Users.AnyAsync(
+            u => u.Email == email && u.Id != excludeUserId,
+            cancellationToken);
+
+    public async Task<IReadOnlyList<UserSystemListItem>> GetAllWithStatisticsAsync(
+        CancellationToken cancellationToken = default)
+        => await Context.Users
+            .AsNoTracking()
+            .OrderBy(u => u.Id)
+            .Select(u => new UserSystemListItem(
+                u.Id,
+                u.Name,
+                u.Email,
+                u.Role!.Name,
+                u.CreatedAt,
+                u.CreatedCampSites.Count,
+                u.Trips.Count,
+                u.Favorites.Count))
+            .ToListAsync(cancellationToken);
 }

@@ -14,7 +14,6 @@ public class CreateCampSiteForm
     public int      IdCanton          { get; set; }
     public int      IdDistrito        { get; set; }
     public string?  DireccionExacta   { get; set; }
-    /// <summary>Archivos nuevos (nombre de campo sugerido: <c>images</c>).</summary>
     public IFormFileCollection? Images { get; set; }
 }
 

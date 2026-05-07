@@ -1,5 +1,6 @@
 using System.Text;
 using CampingCore.Application.Abstractions.Authentication;
+using CampingCore.Application.Abstractions.Security;
 using CampingCore.Application.Abstractions.Geo;
 using CampingCore.Domain.Repositories;
 using CampingCore.Infrastructure.Authentication;
@@ -60,6 +61,9 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, JwtTokenService>();
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, CurrentUserService>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -2,7 +2,7 @@ using CampingCore.Application.CampSites;
 using CampingCore.Domain.Entities;
 using FluentValidation;
 
-namespace CampingCore.Application.CampSites.Commands.UpdateCampSite;
+namespace CampingCore.Application.UseCases.CampSites.Commands.UpdateCampSite;
 
 public sealed class UpdateCampSiteCommandValidator : AbstractValidator<UpdateCampSiteCommand>
 {

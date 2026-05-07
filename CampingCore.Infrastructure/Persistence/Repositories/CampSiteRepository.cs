@@ -21,6 +21,13 @@ internal sealed class CampSiteRepository : Repository<CampSite, int>, ICampSiteR
             .Include(c => c.Images)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<CampSite>> GetByCreatedByUserIdAsync(int userId, CancellationToken cancellationToken = default) =>
+        await Context.Set<CampSite>()
+            .AsSplitQuery()
+            .Include(c => c.Images)
+            .Where(c => c.CreatedByUserId == userId)
+            .ToListAsync(cancellationToken);
+
     public async Task RecalculateCampSiteRatingAsync(int campSiteId, CancellationToken cancellationToken = default)
     {
         var avg = await Context.Set<Review>()

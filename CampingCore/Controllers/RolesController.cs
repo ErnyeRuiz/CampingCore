@@ -5,6 +5,7 @@ using CampingCore.Application.Roles.Commands.SetRolePermissions;
 using CampingCore.Application.Roles.Commands.UpdateRole;
 using CampingCore.Application.Roles.Queries.GetAllRoles;
 using CampingCore.Application.Roles.Queries.GetRoleById;
+using CampingCore.Application.Security;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -13,10 +14,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace CampingCore.Controllers;
 
 /// <summary>
-/// Catálogo de roles y asignación de permisos. Requiere JWT; no hay políticas adicionales por rol más allá de un token válido.
+/// Catálogo de roles y asignación de permisos. Solo el rol JWT <c>SuperUser</c> puede acceder a estas rutas.
 /// </summary>
 [Route("api/roles")]
-[Authorize]
+[Authorize(Roles = AppRoles.SuperUser)]
 public sealed class RolesController : ApiController
 {
     public RolesController(ISender sender) : base(sender) { }
