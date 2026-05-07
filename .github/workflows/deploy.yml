@@ -24,13 +24,31 @@ jobs:
       - name: Build
         run: dotnet build -c Release --no-restore
 
-      - name: Publish project
+      - name: Publish
         run: dotnet publish ./CampingCore/CampingCore.csproj -c Release -o ./publish --no-build
 
       - name: Create app_offline.htm
-        run: echo "Site is updating" > ./publish/app_offline.htm
+        shell: pwsh
+        run: |
+          "Site is updating" | Out-File -Encoding utf8 ./app_offline.htm
 
-      - name: Deploy via FTP
+      # STEP 1 - Stop IIS app
+      - name: Upload app_offline.htm
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: site64767.siteasp.net
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./
+          server-dir: wwwroot/
+          include: app_offline.htm
+
+      - name: Wait for IIS shutdown
+        run: Start-Sleep -Seconds 10
+        shell: pwsh
+
+      # STEP 2 - Deploy app
+      - name: Deploy Application
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: site64767.siteasp.net
