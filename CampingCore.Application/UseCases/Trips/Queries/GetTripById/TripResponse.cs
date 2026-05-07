@@ -1,3 +1,11 @@
-namespace CampingCore.Application.Trips.Queries.GetTripById;
+using CampingCore.Application.UseCases.Shared;
 
-public record TripResponse(int Id, int UserId, string Name, DateOnly StartDate, DateOnly EndDate);
+namespace CampingCore.Application.UseCases.Trips.Queries.GetTripById;
+
+public record TripResponse(
+    int Id,
+    int UserId,
+    string Name,
+    DateOnly StartDate,
+    DateOnly EndDate,
+    IReadOnlyList<CampSiteSummary> CampSiteSummaries);

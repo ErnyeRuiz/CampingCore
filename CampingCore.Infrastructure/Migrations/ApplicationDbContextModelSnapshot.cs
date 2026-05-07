@@ -41,6 +41,9 @@ namespace CampingCore.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("NVARCHAR(MAX)");
 
+                    b.Property<string>("DireccionExacta")
+                        .HasColumnType("NVARCHAR(500)");
+
                     b.Property<bool>("HasElectricity")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -50,6 +53,15 @@ namespace CampingCore.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
+
+                    b.Property<int>("IdCanton")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdDistrito")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IdProvincia")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Latitude")
                         .HasColumnType("DECIMAL(9,6)")
@@ -65,6 +77,11 @@ namespace CampingCore.Infrastructure.Migrations
 
                     b.Property<decimal>("PricePerNight")
                         .HasColumnType("DECIMAL(10,2)");
+
+                    b.Property<decimal>("Rating")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("DECIMAL(4,2)")
+                        .HasDefaultValue(0m);
 
                     b.HasKey("Id");
 
@@ -84,10 +101,9 @@ namespace CampingCore.Infrastructure.Migrations
                     b.Property<int>("CampSiteId")
                         .HasColumnType("int");
 
-                    b.Property<string>("ImageUrl")
+                    b.Property<string>("ImageBase64")
                         .IsRequired()
-                        .HasMaxLength(2083)
-                        .HasColumnType("nvarchar(2083)");
+                        .HasColumnType("nvarchar(MAX)");
 
                     b.HasKey("Id");
 
@@ -117,6 +133,36 @@ namespace CampingCore.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Favorites", (string)null);
+                });
+
+            modelBuilder.Entity("CampingCore.Domain.Entities.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("CampingCore.Domain.Entities.Review", b =>
@@ -151,6 +197,60 @@ namespace CampingCore.Infrastructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Reviews", (string)null);
+                });
+
+            modelBuilder.Entity("CampingCore.Domain.Entities.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cliente del sistema",
+                            Name = "Customer"
+                        });
+                });
+
+            modelBuilder.Entity("CampingCore.Domain.Entities.RolePermission", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RoleId", "PermissionId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("CampingCore.Domain.Entities.Trip", b =>
@@ -233,10 +333,15 @@ namespace CampingCore.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users", (string)null);
                 });
@@ -301,6 +406,25 @@ namespace CampingCore.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("CampingCore.Domain.Entities.RolePermission", b =>
+                {
+                    b.HasOne("CampingCore.Domain.Entities.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CampingCore.Domain.Entities.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("CampingCore.Domain.Entities.Trip", b =>
                 {
                     b.HasOne("CampingCore.Domain.Entities.User", "User")
@@ -331,6 +455,17 @@ namespace CampingCore.Infrastructure.Migrations
                     b.Navigation("Trip");
                 });
 
+            modelBuilder.Entity("CampingCore.Domain.Entities.User", b =>
+                {
+                    b.HasOne("CampingCore.Domain.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("CampingCore.Domain.Entities.CampSite", b =>
                 {
                     b.Navigation("Favorites");
@@ -340,6 +475,16 @@ namespace CampingCore.Infrastructure.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("TripCampSites");
+                });
+
+            modelBuilder.Entity("CampingCore.Domain.Entities.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
+                });
+
+            modelBuilder.Entity("CampingCore.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
                 });
 
             modelBuilder.Entity("CampingCore.Domain.Entities.Trip", b =>

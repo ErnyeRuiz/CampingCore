@@ -28,9 +28,16 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(255);
 
-        // La BD calcula el valor por defecto; EF no lo envía en el INSERT
         builder.Property(u => u.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
+
+        builder.Property(u => u.RoleId)
+            .IsRequired();
+
+        builder.HasOne(u => u.Role)
+            .WithMany()
+            .HasForeignKey(u => u.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Navegaciones inversas: un usuario creó muchos CampSites, tiene muchas reviews, etc.
         builder.HasMany(u => u.CreatedCampSites)

@@ -20,6 +20,7 @@ internal sealed class GetFavoritesByUserQueryHandler : IQueryHandler<GetFavorite
     {
         var favorites = await _favoriteRepository.GetByUserIdAsync(request.UserId, cancellationToken);
 
-        return Result.Success<IReadOnlyList<FavoriteResponse>>(_mapper.Map<IReadOnlyList<FavoriteResponse>>(favorites));
+        var responses = _mapper.Map<List<FavoriteResponse>>(favorites);
+        return Result.Success<IReadOnlyList<FavoriteResponse>>(responses);
     }
 }

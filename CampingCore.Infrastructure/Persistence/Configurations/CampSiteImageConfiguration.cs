@@ -12,9 +12,8 @@ internal sealed class CampSiteImageConfiguration : IEntityTypeConfiguration<Camp
 
         builder.HasKey(i => i.Id);
 
-        // 2083 es la longitud máxima de una URL según el estándar RFC
-        builder.Property(i => i.ImageUrl)
+        builder.Property(i => i.ImageBase64)
             .IsRequired()
-            .HasMaxLength(2083);
+            .HasColumnType("nvarchar(MAX)");
     }
 }

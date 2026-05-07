@@ -1,4 +1,5 @@
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.UseCases.CampSites.Commands.CreateCampSite;
 using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Repositories;
@@ -21,29 +22,42 @@ internal sealed class CreateCampSiteCommandHandler : ICommandHandler<CreateCampS
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<int>> Handle(CreateCampSiteCommand request, CancellationToken cancellationToken)
-    {
-        var userExists = await _userRepository.GetByIdAsync(request.CreatedByUserId, cancellationToken);
+    public Task<Result<int>> Handle(CreateCampSiteCommand request, CancellationToken cancellationToken) =>
+        _unitOfWork.ExecuteTransactionalAsync(async () =>
+        {
+            var userExists = await _userRepository.GetByIdAsync(request.CreatedByUserId, cancellationToken);
 
-        if (userExists is null)
-            return Result.Failure<int>(Error.NotFound(nameof(User), request.CreatedByUserId));
+            if (userExists is null)
+                return Result.Failure<int>(Error.NotFound(nameof(User), request.CreatedByUserId));
 
-        var result = CampSite.Create(
-            request.Name,
-            request.Description,
-            request.Latitude,
-            request.Longitude,
-            request.PricePerNight,
-            request.HasWater,
-            request.HasElectricity,
-            request.CreatedByUserId);
+            var siteResult = CampSite.Create(
+                request.Name,
+                request.Description,
+                request.Latitude,
+                request.Longitude,
+                request.PricePerNight,
+                request.HasWater,
+                request.HasElectricity,
+                request.CreatedByUserId,
+                request.IdProvincia,
+                request.IdCanton,
+                request.IdDistrito,
+                request.DireccionExacta);
 
-        if (result.IsFailure)
-            return Result.Failure<int>(result.Error);
+            if (siteResult.IsFailure)
+                return Result.Failure<int>(siteResult.Error);
 
-        _campSiteRepository.Add(result.Value);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+            var campSite = siteResult.Value;
+            _campSiteRepository.Add(campSite);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result.Value.Id;
-    }
+            var newBase64 = request.NewImages.Select(i => i.Base64).ToList();
+            var replace = campSite.ReplaceImages(imageIdsToKeep: null, newBase64);
+            if (replace.IsFailure)
+                return Result.Failure<int>(replace.Error);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success(campSite.Id);
+        }, cancellationToken);
 }

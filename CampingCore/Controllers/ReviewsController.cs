@@ -2,6 +2,7 @@ using CampingCore.Application.Reviews.Commands.CreateReview;
 using CampingCore.Application.Reviews.Commands.DeleteReview;
 using CampingCore.Application.Reviews.Commands.UpdateReview;
 using CampingCore.Application.Reviews.Queries.GetReviewsByCampSite;
+using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,11 +25,11 @@ public sealed class ReviewsController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con la lista.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ReviewResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<ReviewResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByCampSite(int campSiteId, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetReviewsByCampSiteQuery(campSiteId), cancellationToken);
-        return Ok(result.Value);
+        return OkResponse(result.Value);
     }
 
     /// <summary>
@@ -40,8 +41,8 @@ public sealed class ReviewsController : ApiController
     /// <returns><c>201</c> con <c>id</c> de la reseña; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
         int campSiteId,
         [FromBody] CreateReviewRequest request,
@@ -56,9 +57,10 @@ public sealed class ReviewsController : ApiController
         var result = await Sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
-            return BadRequest(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Created(string.Empty, new { id = result.Value });
+        return StatusCode(StatusCodes.Status201Created,
+            ApiResponse.Success(new { id = result.Value }, 201, "Reseña creada exitosamente."));
     }
 
     /// <summary>
@@ -67,13 +69,13 @@ public sealed class ReviewsController : ApiController
     /// <param name="id">Id de la reseña.</param>
     /// <param name="request">Nueva calificación y comentario.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> sin cuerpo; <c>403</c> si no es el autor; <c>404</c> no encontrada.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> si no es el autor; <c>404</c> no encontrada.</returns>
     [HttpPut("~/api/reviews/{id:int}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         int id,
         [FromBody] UpdateReviewRequest request,
@@ -84,9 +86,9 @@ public sealed class ReviewsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return Ok();
+        return SuccessResponse("Reseña actualizada exitosamente.");
     }
 
     /// <summary>
@@ -94,12 +96,12 @@ public sealed class ReviewsController : ApiController
     /// </summary>
     /// <param name="id">Id de la reseña.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>204</c> sin cuerpo; <c>403</c> si no es el autor; <c>404</c> no encontrada.</returns>
+    /// <returns><c>200</c> con envelope; <c>403</c> si no es el autor; <c>404</c> no encontrada.</returns>
     [HttpDelete("~/api/reviews/{id:int}")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(
@@ -107,17 +109,10 @@ public sealed class ReviewsController : ApiController
             cancellationToken);
 
         if (result.IsFailure)
-            return MapError(result.Error);
+            return MapErrorResponse(result.Error);
 
-        return NoContent();
+        return SuccessResponse("Reseña eliminada exitosamente.");
     }
-
-    private IActionResult MapError(Domain.Common.Error error) => error.Code switch
-    {
-        var c when c.EndsWith(".Forbidden") => Forbid(),
-        var c when c.EndsWith(".NotFound")  => NotFound(error),
-        _                                   => BadRequest(error)
-    };
 }
 
 /// <param name="Rating">Puntuación de 1 a 5.</param>

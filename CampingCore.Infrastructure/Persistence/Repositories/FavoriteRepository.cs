@@ -13,7 +13,10 @@ internal sealed class FavoriteRepository : Repository<Favorite, int>, IFavoriteR
             .FirstOrDefaultAsync(f => f.UserId == userId && f.CampSiteId == campSiteId, cancellationToken);
 
     public async Task<IReadOnlyList<Favorite>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
-        => await Context.Favorites
-            .Where(f => f.UserId == userId)
-            .ToListAsync(cancellationToken);
+    => await Context.Set<Favorite>()
+        .Include(f => f.CampSite)
+            .ThenInclude(c => c.Images)
+        .AsNoTracking()
+        .Where(f => f.UserId == userId)
+        .ToListAsync(cancellationToken);
 }

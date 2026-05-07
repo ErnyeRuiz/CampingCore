@@ -1,7 +1,10 @@
 using System.Text;
 using CampingCore.Application.Abstractions.Authentication;
+using CampingCore.Application.Abstractions.Security;
+using CampingCore.Application.Abstractions.Geo;
 using CampingCore.Domain.Repositories;
 using CampingCore.Infrastructure.Authentication;
+using CampingCore.Infrastructure.ExternalServices;
 using CampingCore.Infrastructure.Persistence;
 using CampingCore.Infrastructure.Persistence.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -29,11 +32,16 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IUserRepository,        UserRepository>();
-        services.AddScoped<ICampSiteRepository,     CampSiteRepository>();
-        services.AddScoped<IReviewRepository,       ReviewRepository>();
-        services.AddScoped<IFavoriteRepository,     FavoriteRepository>();
-        services.AddScoped<ITripRepository,         TripRepository>();
+        services.AddScoped<IRoleRepository,        RoleRepository>();
+        services.AddScoped<IPermissionRepository,  PermissionRepository>();
+        services.AddScoped<ICampSiteRepository,    CampSiteRepository>();
+        services.AddScoped<IReviewRepository,      ReviewRepository>();
+        services.AddScoped<IFavoriteRepository,    FavoriteRepository>();
+        services.AddScoped<ITripRepository,        TripRepository>();
         services.AddScoped<ITripCampSiteRepository, TripCampSiteRepository>();
+
+        services.AddHttpClient<IGeoApiService, GeoApiService>(client =>
+            client.BaseAddress = new Uri(configuration["GeoApi:BaseUrl"]!));
 
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
         if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey))
@@ -53,6 +61,9 @@ public static class DependencyInjection
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, JwtTokenService>();
+
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUser, CurrentUserService>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

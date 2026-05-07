@@ -40,6 +40,23 @@ internal sealed class CampSiteConfiguration : IEntityTypeConfiguration<CampSite>
         builder.Property(c => c.CreatedAt)
             .HasDefaultValueSql("GETDATE()");
 
+        builder.Property(c => c.IdProvincia)
+            .IsRequired();
+
+        builder.Property(c => c.IdCanton)
+            .IsRequired();
+
+        builder.Property(c => c.IdDistrito)
+            .IsRequired();
+
+        builder.Property(c => c.DireccionExacta)
+            .HasColumnType("NVARCHAR(500)");
+
+        // Promedio de calificaciones de Reviews; se actualiza vía RecalculateCampSiteRatingAsync
+        builder.Property(c => c.Rating)
+            .HasColumnType("DECIMAL(4,2)")
+            .HasDefaultValue(0m);
+
         builder.HasMany(c => c.Images)
             .WithOne(i => i.CampSite)
             .HasForeignKey(i => i.CampSiteId)

@@ -18,7 +18,9 @@ public class User
     public string Email { get; private set; } = string.Empty;
     public string PasswordHash { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
+    public int RoleId { get; private set; }
 
+    public Role? Role { get; private set; }
     public ICollection<CampSite> CreatedCampSites { get; private set; } = new List<CampSite>();
     public ICollection<Review> Reviews { get; private set; } = new List<Review>();
     public ICollection<Favorite> Favorites { get; private set; } = new List<Favorite>();
@@ -26,23 +28,25 @@ public class User
 
     protected User() { }
 
-    private User(string name, string email, string passwordHash)
+    private User(string name, string email, string passwordHash, int roleId)
     {
-        Name = name;
-        Email = email;
+        Name         = name;
+        Email        = email;
         PasswordHash = passwordHash;
-        CreatedAt = DateTime.UtcNow;
+        RoleId       = roleId;
+        CreatedAt    = DateTime.UtcNow;
     }
 
-    public static Result<User> Create(string name, string email, string passwordHash)
+    public static Result<User> Create(string name, string email, string passwordHash, int roleId)
     {
         if (string.IsNullOrWhiteSpace(name))         return Result.Failure<User>(Errors.NameRequired);
         if (name.Length > 100)                        return Result.Failure<User>(Errors.NameTooLong);
         if (string.IsNullOrWhiteSpace(email))         return Result.Failure<User>(Errors.EmailRequired);
         if (email.Length > 255)                       return Result.Failure<User>(Errors.EmailTooLong);
         if (string.IsNullOrWhiteSpace(passwordHash))  return Result.Failure<User>(Errors.PasswordHashRequired);
+        if (roleId <= 0)                              return Result.Failure<User>(Error.Validation("User.InvalidRoleId", "El identificador de rol debe ser mayor a 0."));
 
-        return new User(name, email, passwordHash);
+        return new User(name, email, passwordHash, roleId);
     }
 
     public Result UpdateProfile(string name)
@@ -51,6 +55,25 @@ public class User
         if (name.Length > 100)               return Result.Failure(Errors.NameTooLong);
 
         Name = name;
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Actualiza datos del usuario por un administrador. Si <paramref name="passwordHash"/> es nulo o vacío, no se modifica la contraseña.
+    /// </summary>
+    public Result UpdateByAdmin(string name, string email, int roleId, string? passwordHash)
+    {
+        if (string.IsNullOrWhiteSpace(name))        return Result.Failure(Errors.NameRequired);
+        if (name.Length > 100)                       return Result.Failure(Errors.NameTooLong);
+        if (string.IsNullOrWhiteSpace(email))       return Result.Failure(Errors.EmailRequired);
+        if (email.Length > 255)                      return Result.Failure(Errors.EmailTooLong);
+        Name   = name;
+        Email  = email.Trim();
+        RoleId = roleId;
+
+        if (!string.IsNullOrWhiteSpace(passwordHash))
+            PasswordHash = passwordHash;
 
         return Result.Success();
     }

@@ -1,4 +1,5 @@
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.Abstractions.Security;
 using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Repositories;
@@ -12,11 +13,16 @@ internal sealed class DeleteCampSiteCommandHandler : ICommandHandler<DeleteCampS
 
     private readonly ICampSiteRepository _campSiteRepository;
     private readonly IUnitOfWork         _unitOfWork;
+    private readonly ICurrentUser        _currentUser;
 
-    public DeleteCampSiteCommandHandler(ICampSiteRepository campSiteRepository, IUnitOfWork unitOfWork)
+    public DeleteCampSiteCommandHandler(
+        ICampSiteRepository campSiteRepository,
+        IUnitOfWork unitOfWork,
+        ICurrentUser currentUser)
     {
         _campSiteRepository = campSiteRepository;
         _unitOfWork         = unitOfWork;
+        _currentUser        = currentUser;
     }
 
     public async Task<Result> Handle(DeleteCampSiteCommand request, CancellationToken cancellationToken)
@@ -26,7 +32,7 @@ internal sealed class DeleteCampSiteCommandHandler : ICommandHandler<DeleteCampS
         if (campSite is null)
             return Result.Failure(Error.NotFound(nameof(CampSite), request.Id));
 
-        if (campSite.CreatedByUserId != request.RequestingUserId)
+        if (!_currentUser.IsSuperUser && campSite.CreatedByUserId != request.RequestingUserId)
             return Result.Failure(Forbidden);
 
         _campSiteRepository.Remove(campSite);
