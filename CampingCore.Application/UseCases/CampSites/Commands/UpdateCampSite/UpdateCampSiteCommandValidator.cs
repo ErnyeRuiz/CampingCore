@@ -1,3 +1,5 @@
+using CampingCore.Application.CampSites;
+using CampingCore.Domain.Entities;
 using FluentValidation;
 
 namespace CampingCore.Application.CampSites.Commands.UpdateCampSite;
@@ -31,5 +33,21 @@ public sealed class UpdateCampSiteCommandValidator : AbstractValidator<UpdateCam
         RuleFor(x => x.DireccionExacta)
             .MaximumLength(500).WithMessage("La dirección exacta no puede superar 500 caracteres.")
             .When(x => x.DireccionExacta is not null);
+
+        RuleFor(x => x.ImageIdsToKeep)
+            .Must(ids => ids is null || ids.Count == ids.Distinct().Count())
+            .WithMessage("La lista de imágenes a conservar contiene valores duplicados.")
+            .When(x => x.ImageIdsToKeep is not null);
+
+        RuleForEach(x => x.ImageIdsToKeep!)
+            .GreaterThan(0)
+            .When(x => x.ImageIdsToKeep is not null);
+
+        RuleFor(x => x)
+            .Must(c => (c.ImageIdsToKeep?.Count ?? 0) + c.NewImages.Count <= CampSite.MaxImagesPerCampSite)
+            .WithMessage($"El total de imágenes (conservadas + nuevas) no puede superar {CampSite.MaxImagesPerCampSite}.");
+
+        RuleForEach(x => x.NewImages)
+            .SetValidator(new ImageFileDtoValidator());
     }
 }

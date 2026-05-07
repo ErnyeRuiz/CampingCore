@@ -1,12 +1,13 @@
-using CampingCore.Application.CampSites.Commands.CreateCampSite;
 using CampingCore.Application.CampSites.Commands.DeleteCampSite;
-using CampingCore.Application.CampSites.Commands.UpdateCampSite;
 using CampingCore.Application.CampSites.Queries.GetAllCampSites;
 using CampingCore.Application.CampSites.Queries.GetCampSiteById;
+using CampingCore.Application.CampSites;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using CampingCore.Application.UseCases.CampSites.Commands.CreateCampSite;
+using CampingCore.Application.UseCases.CampSites.Commands.UpdateCampSite;
 
 namespace CampingCore.Controllers;
 
@@ -52,31 +53,37 @@ public sealed class CampSitesController : ApiController
 
     /// <summary>
     /// Crea un sitio de camping. El creador queda fijado al usuario del JWT.
+    /// Cuerpo <c>multipart/form-data</c>: campos escalares + colección de archivos <c>images</c> (opcional).
     /// </summary>
-    /// <param name="request">Datos del sitio.</param>
+    /// <param name="form">Datos del sitio y archivos.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>201</c> con <c>id</c>; <c>400</c> en error de validación o dominio.</returns>
     [HttpPost]
     [Authorize]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(
-        [FromBody] CreateCampSiteRequest request,
+        [FromForm] CreateCampSiteForm form,
         CancellationToken cancellationToken)
     {
+        IReadOnlyList<ImageFileDto> newImages =
+            await CampSiteImageFormMapper.ToImageFileDtosAsync(form.Images, cancellationToken);
+
         var command = new CreateCampSiteCommand(
-            request.Name,
-            request.Description,
-            request.Latitude,
-            request.Longitude,
-            request.PricePerNight,
-            request.HasWater,
-            request.HasElectricity,
+            form.Name,
+            form.Description,
+            form.Latitude,
+            form.Longitude,
+            form.PricePerNight,
+            form.HasWater,
+            form.HasElectricity,
             GetCurrentUserId(),
-            request.IdProvincia,
-            request.IdCanton,
-            request.IdDistrito,
-            request.DireccionExacta);
+            form.IdProvincia,
+            form.IdCanton,
+            form.IdDistrito,
+            form.DireccionExacta,
+            newImages);
 
         var result = await Sender.Send(command, cancellationToken);
 
@@ -88,36 +95,43 @@ public sealed class CampSitesController : ApiController
 
     /// <summary>
     /// Actualiza un sitio. Solo el creador (<c>CreatedByUserId</c>) puede modificar.
+    /// <c>multipart/form-data</c>: campos escalares + <c>images</c> (nuevas) + <c>imageIdsToKeep</c> (ids existentes a conservar; vacío = borrar todas las actuales).
     /// </summary>
     /// <param name="id">Identificador del sitio.</param>
-    /// <param name="request">Nuevos datos.</param>
+    /// <param name="form">Nuevos datos e imágenes.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>403</c> si no es el dueño; <c>404</c> no encontrado.</returns>
     [HttpPut("{id:int}")]
     [Authorize]
+    [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(
         int id,
-        [FromBody] UpdateCampSiteRequest request,
+        [FromForm] UpdateCampSiteForm form,
         CancellationToken cancellationToken)
     {
+        IReadOnlyList<ImageFileDto> newImages =
+            await CampSiteImageFormMapper.ToImageFileDtosAsync(form.Images, cancellationToken);
+
         var command = new UpdateCampSiteCommand(
             id,
-            request.Name,
-            request.Description,
-            request.Latitude,
-            request.Longitude,
-            request.PricePerNight,
-            request.HasWater,
-            request.HasElectricity,
+            form.Name,
+            form.Description,
+            form.Latitude,
+            form.Longitude,
+            form.PricePerNight,
+            form.HasWater,
+            form.HasElectricity,
             GetCurrentUserId(),
-            request.IdProvincia,
-            request.IdCanton,
-            request.IdDistrito,
-            request.DireccionExacta);
+            form.IdProvincia,
+            form.IdCanton,
+            form.IdDistrito,
+            form.DireccionExacta,
+            form.ImageIdsToKeep,
+            newImages);
 
         var result = await Sender.Send(command, cancellationToken);
 
@@ -150,51 +164,3 @@ public sealed class CampSitesController : ApiController
         return SuccessResponse("Sitio de camping eliminado exitosamente.");
     }
 }
-
-/// <param name="Name">Nombre del sitio.</param>
-/// <param name="Description">Descripción opcional.</param>
-/// <param name="Latitude">Latitud (-90 a 90).</param>
-/// <param name="Longitude">Longitud (-180 a 180).</param>
-/// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
-/// <param name="HasWater">Indica agua en el sitio.</param>
-/// <param name="HasElectricity">Indica electricidad en el sitio.</param>
-/// <param name="IdProvincia">Identificador de provincia.</param>
-/// <param name="IdCanton">Identificador de cantón.</param>
-/// <param name="IdDistrito">Identificador de distrito.</param>
-/// <param name="DireccionExacta">Otras señas / dirección exacta (opcional).</param>
-public record UpdateCampSiteRequest(
-    string  Name,
-    string? Description,
-    decimal Latitude,
-    decimal Longitude,
-    decimal PricePerNight,
-    bool    HasWater,
-    bool    HasElectricity,
-    int     IdProvincia,
-    int     IdCanton,
-    int     IdDistrito,
-    string? DireccionExacta);
-
-/// <param name="Name">Nombre del sitio.</param>
-/// <param name="Description">Descripción opcional.</param>
-/// <param name="Latitude">Latitud (-90 a 90).</param>
-/// <param name="Longitude">Longitud (-180 a 180).</param>
-/// <param name="PricePerNight">Precio por noche (mayor que 0).</param>
-/// <param name="HasWater">Indica agua en el sitio.</param>
-/// <param name="HasElectricity">Indica electricidad en el sitio.</param>
-/// <param name="IdProvincia">Identificador de provincia.</param>
-/// <param name="IdCanton">Identificador de cantón.</param>
-/// <param name="IdDistrito">Identificador de distrito.</param>
-/// <param name="DireccionExacta">Otras señas / dirección exacta (opcional).</param>
-public record CreateCampSiteRequest(
-    string  Name,
-    string? Description,
-    decimal Latitude,
-    decimal Longitude,
-    decimal PricePerNight,
-    bool    HasWater,
-    bool    HasElectricity,
-    int     IdProvincia,
-    int     IdCanton,
-    int     IdDistrito,
-    string? DireccionExacta);

@@ -15,7 +15,13 @@ public class CampSite
         public static readonly Error IdProvinciaRequired    = Error.Validation("CampSite.IdProvinciaRequired",    "El identificador de provincia debe ser mayor a 0.");
         public static readonly Error IdCantonRequired       = Error.Validation("CampSite.IdCantonRequired",       "El identificador de cantón debe ser mayor a 0.");
         public static readonly Error IdDistritoRequired     = Error.Validation("CampSite.IdDistritoRequired",     "El identificador de distrito debe ser mayor a 0.");
+        public static readonly Error NotPersisted            = Error.Validation("CampSite.NotPersisted",            "El sitio debe estar persistido antes de gestionar imágenes.");
+        public static readonly Error InvalidImageIdToKeep    = Error.Validation("CampSite.InvalidImageIdToKeep",    "Uno o más identificadores de imagen no pertenecen a este sitio.");
+        public static readonly Error TooManyImages           = Error.Validation("CampSite.TooManyImages",           "Se superó el número máximo de imágenes permitidas.");
+        public static readonly Error DuplicateImageIdsToKeep = Error.Validation("CampSite.DuplicateImageIdsToKeep", "La lista de imágenes a conservar contiene valores duplicados.");
     }
+
+    public const int MaxImagesPerCampSite = 20;
 
     public int Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -105,6 +111,49 @@ public class CampSite
         IdCanton        = idCanton;
         IdDistrito      = idDistrito;
         DireccionExacta = direccionExacta;
+
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Reemplaza el álbum de imágenes: conserva las indicadas en <paramref name="imageIdsToKeep"/>
+    /// (vacío o <c>null</c> = no conservar ninguna existente) y añade <paramref name="newImageBase64Values"/>.
+    /// Requiere <see cref="Id"/> mayor que cero (sitio ya persistido).
+    /// </summary>
+    public Result ReplaceImages(IReadOnlyCollection<int>? imageIdsToKeep, IReadOnlyList<string> newImageBase64Values)
+    {
+        if (Id <= 0)
+            return Result.Failure(Errors.NotPersisted);
+
+        var keep = imageIdsToKeep is null || imageIdsToKeep.Count == 0
+            ? new HashSet<int>()
+            : new HashSet<int>(imageIdsToKeep);
+
+        if (imageIdsToKeep is not null && keep.Count != imageIdsToKeep.Count)
+            return Result.Failure(Errors.DuplicateImageIdsToKeep);
+
+        var existingIds = Images.Select(i => i.Id).ToHashSet();
+        foreach (var id in keep)
+        {
+            if (!existingIds.Contains(id))
+                return Result.Failure(Errors.InvalidImageIdToKeep);
+        }
+
+        if (keep.Count + newImageBase64Values.Count > MaxImagesPerCampSite)
+            return Result.Failure(Errors.TooManyImages);
+
+        var toRemove = Images.Where(i => !keep.Contains(i.Id)).ToList();
+        foreach (var img in toRemove)
+            Images.Remove(img);
+
+        foreach (var b64 in newImageBase64Values)
+        {
+            var created = CampSiteImage.Create(Id, b64);
+            if (created.IsFailure)
+                return Result.Failure(created.Error);
+
+            Images.Add(created.Value);
+        }
 
         return Result.Success();
     }

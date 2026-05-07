@@ -1,3 +1,5 @@
+using CampingCore.Application.CampSites;
+using CampingCore.Domain.Entities;
 using FluentValidation;
 
 namespace CampingCore.Application.CampSites.Commands.CreateCampSite;
@@ -34,5 +36,12 @@ internal sealed class CreateCampSiteCommandValidator : AbstractValidator<CreateC
         RuleFor(x => x.DireccionExacta)
             .MaximumLength(500).WithMessage("La dirección exacta no puede superar 500 caracteres.")
             .When(x => x.DireccionExacta is not null);
+
+        RuleFor(x => x.NewImages)
+            .Must(l => l.Count <= CampSite.MaxImagesPerCampSite)
+            .WithMessage($"No puede adjuntar más de {CampSite.MaxImagesPerCampSite} imágenes.");
+
+        RuleForEach(x => x.NewImages)
+            .SetValidator(new ImageFileDtoValidator());
     }
 }

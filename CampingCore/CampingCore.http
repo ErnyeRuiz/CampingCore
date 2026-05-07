@@ -182,44 +182,115 @@ GET {{baseUrl}}/api/campsites/{{id}}
 
 ###
 
-# Obligatorios: idProvincia, idCanton, idDistrito (> 0). Úsalos según ubicación.
+# Cuerpo: multipart/form-data — campos escalares (PascalCase o camelCase) + opcional "images" (archivos).
+# Tras GET de detalle, los ids de imágenes están en la respuesta (CampSiteResponse.Images).
 POST {{baseUrl}}/api/campsites
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: multipart/form-data; boundary=----CampingFormBoundary
 
-{
-  "name": "Camping Río",
-  "description": "Junto al río, parcelas amplias.",
-  "latitude": 9.934739,
-  "longitude": -84.087502,
-  "pricePerNight": 25.00,
-  "hasWater": true,
-  "hasElectricity": true,
-  "idProvincia": 1,
-  "idCanton": 1,
-  "idDistrito": 1,
-  "direccionExacta": "De la escuela 200 m al sur"
-}
+------CampingFormBoundary
+Content-Disposition: form-data; name="name"
+
+Camping Río
+------CampingFormBoundary
+Content-Disposition: form-data; name="description"
+
+Junto al río
+------CampingFormBoundary
+Content-Disposition: form-data; name="latitude"
+
+9.934739
+------CampingFormBoundary
+Content-Disposition: form-data; name="longitude"
+
+-84.087502
+------CampingFormBoundary
+Content-Disposition: form-data; name="pricePerNight"
+
+25.00
+------CampingFormBoundary
+Content-Disposition: form-data; name="hasWater"
+
+true
+------CampingFormBoundary
+Content-Disposition: form-data; name="hasElectricity"
+
+true
+------CampingFormBoundary
+Content-Disposition: form-data; name="idProvincia"
+
+1
+------CampingFormBoundary
+Content-Disposition: form-data; name="idCanton"
+
+1
+------CampingFormBoundary
+Content-Disposition: form-data; name="idDistrito"
+
+1
+------CampingFormBoundary
+Content-Disposition: form-data; name="direccionExacta"
+
+De la escuela 200 m al sur
+------CampingFormBoundary
+Content-Disposition: form-data; name="images"; filename="camping.jpg"
+Content-Type: image/jpeg
+
+< c:\path\to\photo.jpg
+------CampingFormBoundary--
 
 ###
 
+# Update: mismo multipart + "imageIdsToKeep" repetido por cada id a conservar (vacío = quitar todas las fotos previas).
 PUT {{baseUrl}}/api/campsites/{{id}}
 Authorization: Bearer {{token}}
-Content-Type: application/json
+Content-Type: multipart/form-data; boundary=----CampingUpdateBoundary
 
-{
-  "name": "Camping Río (editado)",
-  "description": "Actualizado vía API",
-  "latitude": 9.934739,
-  "longitude": -84.087502,
-  "pricePerNight": 28.50,
-  "hasWater": true,
-  "hasElectricity": false,
-  "idProvincia": 1,
-  "idCanton": 1,
-  "idDistrito": 1,
-  "direccionExacta": null
-}
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="name"
+
+Camping Río (editado)
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="description"
+
+Actualizado vía API
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="latitude"
+
+9.934739
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="longitude"
+
+-84.087502
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="pricePerNight"
+
+28.50
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="hasWater"
+
+true
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="hasElectricity"
+
+false
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="idProvincia"
+
+1
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="idCanton"
+
+1
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="idDistrito"
+
+1
+------CampingUpdateBoundary
+Content-Disposition: form-data; name="imageIdsToKeep"
+
+1
+------CampingUpdateBoundary--
 
 ###
 

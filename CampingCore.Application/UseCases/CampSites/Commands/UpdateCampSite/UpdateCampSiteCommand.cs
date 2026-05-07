@@ -1,6 +1,7 @@
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.CampSites;
 
-namespace CampingCore.Application.CampSites.Commands.UpdateCampSite;
+namespace CampingCore.Application.UseCases.CampSites.Commands.UpdateCampSite;
 
 public record UpdateCampSiteCommand(
     int     Id,
@@ -15,4 +16,6 @@ public record UpdateCampSiteCommand(
     int     IdProvincia,
     int     IdCanton,
     int     IdDistrito,
-    string? DireccionExacta) : ICommand;
+    string? DireccionExacta,
+    IReadOnlyList<int>? ImageIdsToKeep,
+    IReadOnlyList<ImageFileDto> NewImages) : ICommand;

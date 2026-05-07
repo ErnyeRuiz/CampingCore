@@ -29,7 +29,7 @@ internal sealed class UpdateCampSiteCommandHandler : ICommandHandler<UpdateCampS
         if (campSite.CreatedByUserId != request.RequestingUserId)
             return Result.Failure(Forbidden);
 
-        var result = campSite.Update(
+        var updateResult = campSite.Update(
             request.Name,
             request.Description,
             request.Latitude,
@@ -42,8 +42,13 @@ internal sealed class UpdateCampSiteCommandHandler : ICommandHandler<UpdateCampS
             request.IdDistrito,
             request.DireccionExacta);
 
-        if (result.IsFailure)
-            return result;
+        if (updateResult.IsFailure)
+            return updateResult;
+
+        var newBase64 = request.NewImages.Select(i => i.Base64).ToList();
+        var replace = campSite.ReplaceImages(request.ImageIdsToKeep, newBase64);
+        if (replace.IsFailure)
+            return replace;
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

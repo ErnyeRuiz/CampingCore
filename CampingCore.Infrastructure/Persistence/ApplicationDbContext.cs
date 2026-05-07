@@ -1,3 +1,4 @@
+using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Primitives;
 using CampingCore.Domain.Repositories;
@@ -32,6 +33,30 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
         // Carga automáticamente todas las clases IEntityTypeConfiguration<T> del ensamblado
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+    }
+
+    public async Task<Result<T>> ExecuteTransactionalAsync<T>(
+        Func<Task<Result<T>>> action,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var result = await action();
+            if (result.IsFailure)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return result;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return result;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

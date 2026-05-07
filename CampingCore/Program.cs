@@ -31,6 +31,8 @@ builder.Services.AddSwaggerGen(options =>
 
             **Convención de rutas:** prefijo `api/…`. Donde aplique, el usuario se infiere del claim `sub` del token.
 
+            **Campings:** `POST` y `PUT` `/api/campsites` usan `multipart/form-data` (campos del sitio + archivos `images`; en `PUT`, `imageIdsToKeep` repetido por cada id de imagen existente que se conserve).
+
             **Swagger en no-desarrollo:** se puede activar con la clave de configuración `EnableSwagger: true` en `appsettings` (útil en demos; no se recomienda en producción pública sin autenticación adicional en el propio endpoint de documentación).
             """,
         Contact = new OpenApiContact
