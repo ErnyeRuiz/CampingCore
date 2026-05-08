@@ -49,6 +49,28 @@ Content-Type: application/json
 
 ###
 
+# Olvido de contraseña: respuesta OK siempre; si el email existe llega código + enlace {{Frontend:BaseUrl}}/reset-password?code=...
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "demo@example.com"
+}
+
+###
+
+# Restablecer contraseña con código del correo (6 dígitos, 15 min).
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "code": "123456",
+  "newPassword": "OtraPass123!"
+}
+
+###
+
 # Login: body con email y password. Respuesta: userId, name, email, roleName, token.
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json

@@ -62,6 +62,7 @@ public static class DependencyInjection
         }
 
         services.Configure<EmailBrandingOptions>(configuration.GetSection(EmailBrandingOptions.SectionName));
+        services.Configure<FrontendOptions>(configuration.GetSection(FrontendOptions.SectionName));
         services.Configure<BrevoSettings>(configuration.GetSection(BrevoSettings.SectionName));
         services.AddHttpClient<IEmailService, BrevoEmailService>(client =>
         {

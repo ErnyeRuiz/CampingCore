@@ -1,6 +1,10 @@
+using CampingCore.Application.UseCases.Auth.ForgotPassword;
+using CampingCore.Application.UseCases.Auth.ResetPassword;
 using CampingCore.Application.UseCases.Auth.VerifyEmail;
+using CampingCore.Application.Users.Commands.ForgotPassword;
 using CampingCore.Application.Users.Commands.Login;
 using CampingCore.Application.Users.Commands.RegisterUser;
+using CampingCore.Application.Users.Commands.ResetPassword;
 using CampingCore.Common;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -54,6 +58,42 @@ public sealed class AuthController : ApiController
             return MapErrorResponse(result.Error);
 
         return SuccessResponse("Email verificado correctamente.");
+    }
+
+    /// <summary>
+    /// Solicita restablecer contraseña. Si el email está registrado, se envía un código con vigencia corta y un enlace al front.
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapErrorResponse(result.Error);
+
+        return SuccessResponse("Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer la contraseña.");
+    }
+
+    /// <summary>
+    /// Cambia la contraseña usando el código enviado por correo.
+    /// </summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapErrorResponse(result.Error);
+
+        return SuccessResponse("Contraseña actualizada correctamente.");
     }
 
     /// <summary>

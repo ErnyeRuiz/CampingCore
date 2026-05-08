@@ -69,6 +69,32 @@ public class User : AggregateRoot<int>
             code));
     }
 
+    public void GeneratePasswordResetCode(string plainCode)
+    {
+        EmailVerificationCode = BCrypt.Net.BCrypt.HashPassword(plainCode);
+        EmailVerificationCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+
+        RaiseDomainEvent(new PasswordResetRequestedDomainEvent(
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            Id,
+            Email,
+            Name,
+            plainCode));
+    }
+
+    public Result ResetPassword(string newPasswordHash)
+    {
+        if (string.IsNullOrWhiteSpace(newPasswordHash))
+            return Result.Failure(Errors.PasswordHashRequired);
+
+        PasswordHash = newPasswordHash;
+        EmailVerificationCode = null;
+        EmailVerificationCodeExpiresAt = null;
+
+        return Result.Success();
+    }
+
     public Result VerifyEmail(string code)
     {
         if (IsEmailVerified)
