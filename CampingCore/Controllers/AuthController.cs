@@ -1,6 +1,7 @@
 using CampingCore.Application.UseCases.Auth.ForgotPassword;
 using CampingCore.Application.UseCases.Auth.ResetPassword;
 using CampingCore.Application.UseCases.Auth.VerifyEmail;
+using CampingCore.Application.UseCases.Auth.ResendVerificationEmail;
 using CampingCore.Application.Users.Commands.ForgotPassword;
 using CampingCore.Application.Users.Commands.Login;
 using CampingCore.Application.Users.Commands.RegisterUser;
@@ -20,12 +21,12 @@ public sealed class AuthController : ApiController
     public AuthController(ISender sender) : base(sender) { }
 
     /// <summary>
-    /// Crea un usuario con contraseña hasheada y le asigna el rol <c>Customer</c> si está definido en el sistema.
-    /// No devuelve JWT: usa <c>POST /api/auth/login</c> después del registro.
+    /// Crea un usuario con contraseña hasheada y el rol indicado en <c>role</c>: <c>customer</c> o <c>admin</c> (mapeados a los roles del sistema).
+    /// No devuelve JWT: usa <c>POST /api/auth/login</c> después de verificar email.
     /// </summary>
-    /// <param name="command">Cuerpo con <c>name</c>, <c>email</c> y <c>password</c> en texto claro (se hashea en servidor).</param>
+    /// <param name="command">Cuerpo con <c>name</c>, <c>email</c>, <c>password</c> y <c>role</c> (<c>customer</c> | <c>admin</c>).</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>201</c> con <c>id</c> del usuario; <c>400</c> si el email ya existe, validación falla o falta el rol <c>Customer</c>.</returns>
+    /// <returns><c>201</c> con <c>id</c> del usuario; <c>400</c> si el email ya existe, validación falla o el rol no existe en el sistema.</returns>
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -101,7 +102,7 @@ public sealed class AuthController : ApiController
     /// </summary>
     /// <param name="command">Cuerpo con <c>email</c> y <c>password</c>.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
-    /// <returns><c>200</c> con <see cref="LoginResponse"/>; <c>401</c> si credenciales incorrectas.</returns>
+    /// <returns><c>200</c> con <see cref="LoginResponse"/>; <c>401</c> si credenciales incorrectas, email no verificado (<c>User.EmailNotVerified</c>, con <c>data.userId</c>) o cuenta admin en período de activación (<c>User.AdminAccountNotReady</c>).</returns>
     [HttpPost("login")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -113,8 +114,34 @@ public sealed class AuthController : ApiController
         var result = await Sender.Send(command, cancellationToken);
 
         if (result.IsFailure)
-            return StatusCode(StatusCodes.Status401Unauthorized, ApiResponse.Fail(401, result.Error.Description));
+        {
+            object? failData = result.Error.Code == CampingCore.Domain.Entities.User.Errors.EmailNotVerified.Code
+                ? result.FailureData
+                : null;
+
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse.Fail(401, result.Error.Description, result.Error.Code, failData));
+        }
 
         return OkResponse(result.Value);
+    }
+
+    /// <summary>
+    /// Reenvía el código de verificación de email si el correo existe y aún no está verificado. Respuesta siempre la misma por privacidad.
+    /// </summary>
+    [HttpPost("resend-verification")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResendVerificationEmail(
+        [FromBody] ResendVerificationEmailCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapErrorResponse(result.Error);
+
+        return SuccessResponse("Si el correo existe y no está verificado, enviaremos un nuevo código.");
     }
 }

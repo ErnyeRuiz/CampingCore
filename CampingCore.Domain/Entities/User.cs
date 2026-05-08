@@ -15,6 +15,10 @@ public class User : AggregateRoot<int>
         public static readonly Error PasswordHashRequired = Error.Validation("User.PasswordHashRequired", "El hash de contraseña es obligatorio.");
         public static readonly Error EmailAlreadyVerified = Error.Validation("User.EmailAlreadyVerified", "El email ya fue verificado.");
         public static readonly Error InvalidOrExpiredVerificationCode = Error.Validation("User.InvalidOrExpiredCode", "El código de verificación es inválido o ha expirado.");
+        public static readonly Error EmailNotVerified = Error.Validation("User.EmailNotVerified", "Debes verificar tu correo electrónico antes de iniciar sesión.");
+
+        public static Error AdminAccountNotReady(int remainingSeconds)
+            => Error.Validation("User.AdminAccountNotReady", $"Tu cuenta estará disponible en {remainingSeconds} segundos.");
     }
 
     public string Name { get; private set; } = string.Empty;

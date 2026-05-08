@@ -25,15 +25,28 @@
 
 ### --- Auth (público) ---------------------------------------------------------
 
-# Registro: crea usuario con rol Customer (debe existir en BD); asigna verificación por correo (código 6 dígitos, ~15 min).
-# Respuesta 201: data incluye id de usuario — actualiza @registeredUserId arriba o edita el JSON tras registrar.
+# Registro: body con "role" "customer" | "admin" (requiere filas Customer y Admin en Roles). Código de verificación por correo (~15 min).
+# Respuesta 201: data incluye id — actualiza @registeredUserId o edita verify-email.
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
   "name": "Demo Usuario",
   "email": "demo@example.com",
-  "password": "Cambialo123!"
+  "password": "Cambialo123!",
+  "role": "customer"
+}
+
+###
+
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin Demo",
+  "email": "admin-demo@example.com",
+  "password": "Cambialo123!",
+  "role": "admin"
 }
 
 ###
@@ -71,7 +84,30 @@ Content-Type: application/json
 
 ###
 
-# Login: body con email y password. Respuesta: userId, name, email, roleName, token.
+# Reenvío de código de verificación: siempre 200 con el mismo mensaje (no revela si el email existe). Email con formato válido.
+POST {{baseUrl}}/api/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "demo@example.com"
+}
+
+###
+
+# Login: 401 con errorCode "User.EmailNotVerified", mensaje y data.userId (credenciales correctas, email sin verificar).
+# Tras verificar, admin nuevo: 401 con errorCode "User.AdminAccountNotReady" y mensaje con segundos hasta activación (CreatedAt + AdminSettings:ActivationDelayHours).
+# Para probar login admin sin esperar 24h, pon ActivationDelayHours en 0 en appsettings.Development.json y reinicia la API.
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-demo@example.com",
+  "password": "Cambialo123!"
+}
+
+###
+
+# Login customer: tras verify-email debería devolver 200 + JWT (mismas reglas de errorCode en el cuerpo si falla).
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 

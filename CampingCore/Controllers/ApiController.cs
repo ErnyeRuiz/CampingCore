@@ -45,8 +45,8 @@ public abstract class ApiController : ControllerBase
     /// </summary>
     protected IActionResult MapErrorResponse(Domain.Common.Error error) => error.Code switch
     {
-        var c when c.EndsWith(".NotFound")  => NotFound(ApiResponse.Fail(404, error.Description)),
-        var c when c.EndsWith(".Forbidden") => StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Fail(403, error.Description)),
-        _                                   => BadRequest(ApiResponse.Fail(400, error.Description))
+        var c when c.EndsWith(".NotFound")  => NotFound(ApiResponse.Fail(404, error.Description, error.Code, null)),
+        var c when c.EndsWith(".Forbidden") => StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Fail(403, error.Description, error.Code, null)),
+        _                                   => BadRequest(ApiResponse.Fail(400, error.Description, error.Code, null))
     };
 }

@@ -19,5 +19,10 @@ internal sealed class RegisterUserCommandValidator : AbstractValidator<RegisterU
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("La contraseña es obligatoria.")
             .MinimumLength(8).WithMessage("La contraseña debe tener al menos 8 caracteres.");
+
+        RuleFor(x => x.Role)
+            .NotEmpty().WithMessage("El rol es obligatorio.")
+            .Must(r => r == "customer" || r == "admin")
+            .WithMessage("El rol debe ser \"customer\" o \"admin\".");
     }
 }

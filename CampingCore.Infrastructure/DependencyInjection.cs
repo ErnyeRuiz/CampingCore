@@ -1,4 +1,5 @@
 using CampingCore.Application.Email;
+using CampingCore.Application.Options;
 using CampingCore.Application.Abstractions.Authentication;
 using CampingCore.Application.Abstractions.Geo;
 using CampingCore.Application.Abstractions.Security;
@@ -71,6 +72,7 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         });
 
+        services.Configure<AdminSettings>(configuration.GetSection(AdminSettings.SectionName));
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
         services.AddScoped<ITokenService, JwtTokenService>();
 
