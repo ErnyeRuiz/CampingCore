@@ -91,6 +91,7 @@ public sealed class UsersController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con <see cref="UserResponse"/> (<c>id</c>, <c>name</c>, <c>email</c>, <c>createdAt</c>, <c>roleName</c>); <c>404</c> si no hay coincidencia con el token.</returns>
     [HttpGet("me")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<UserResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
@@ -110,6 +111,7 @@ public sealed class UsersController : ApiController
     /// <param name="cancellationToken">Token de cancelación.</param>
     /// <returns><c>200</c> con envelope; <c>400/404</c> si validación o usuario no existe.</returns>
     [HttpPut("me")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]

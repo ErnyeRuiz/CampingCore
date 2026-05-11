@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Favorite
+public class Favorite : Entity<int>
 {
     public static class Errors
     {
@@ -10,16 +11,15 @@ public class Favorite
         public static readonly Error InvalidCampSiteId = Error.Validation("Favorite.InvalidCampSiteId", "El identificador del sitio de camping debe ser mayor a 0.");
     }
 
-    public int Id { get; private set; }
     public int UserId { get; private set; }
     public int CampSiteId { get; private set; }
 
     public User? User { get; private set; }
     public CampSite? CampSite { get; private set; }
 
-    protected Favorite() { }
+    protected Favorite() : base(0) { }
 
-    private Favorite(int userId, int campSiteId)
+    private Favorite(int userId, int campSiteId) : base(0)
     {
         UserId = userId;
         CampSiteId = campSiteId;

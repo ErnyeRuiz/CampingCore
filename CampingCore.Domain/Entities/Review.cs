@@ -1,8 +1,10 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Events;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Review
+public class Review : AggregateRoot<int>
 {
     public static class Errors
     {
@@ -11,7 +13,6 @@ public class Review
         public static readonly Error RatingOutOfRange  = Error.Validation("Review.RatingOutOfRange",  "La calificación debe estar entre 1 y 5.");
     }
 
-    public int Id { get; private set; }
     public int UserId { get; private set; }
     public int CampSiteId { get; private set; }
     public byte Rating { get; private set; }
@@ -21,9 +22,9 @@ public class Review
     public User? User { get; private set; }
     public CampSite? CampSite { get; private set; }
 
-    protected Review() { }
+    protected Review() : base(0) { }
 
-    private Review(int userId, int campSiteId, byte rating, string? comment)
+    private Review(int userId, int campSiteId, byte rating, string? comment) : base(0)
     {
         UserId = userId;
         CampSiteId = campSiteId;
@@ -38,7 +39,9 @@ public class Review
         if (campSiteId <= 0)          return Result.Failure<Review>(Errors.InvalidCampSiteId);
         if (rating < 1 || rating > 5) return Result.Failure<Review>(Errors.RatingOutOfRange);
 
-        return new Review(userId, campSiteId, rating, comment);
+        var review = new Review(userId, campSiteId, rating, comment);
+        review.RaiseCampSiteRatingRecalculationRequested();
+        return review;
     }
 
     public Result Update(byte rating, string? comment)
@@ -48,6 +51,16 @@ public class Review
         Rating  = rating;
         Comment = comment;
 
+        RaiseCampSiteRatingRecalculationRequested();
         return Result.Success();
     }
+
+    public void NotifyCampSiteRatingMayHaveChanged()
+        => RaiseCampSiteRatingRecalculationRequested();
+
+    private void RaiseCampSiteRatingRecalculationRequested()
+        => RaiseDomainEvent(new CampSiteRatingRecalculationRequestedDomainEvent(
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            CampSiteId));
 }

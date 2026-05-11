@@ -1,15 +1,14 @@
 using CampingCore.Application.Abstractions.Messaging;
+using CampingCore.Application.Security;
+using CampingCore.Application.Users.Commands.RegisterUser;
 using CampingCore.Domain.Common;
 using CampingCore.Domain.Entities;
 using CampingCore.Domain.Repositories;
 
-namespace CampingCore.Application.Users.Commands.RegisterUser;
+namespace CampingCore.Application.UseCases.Auth.RegisterUser;
 
 internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, int>
 {
-    private static readonly Error CustomerRoleNotFound =
-        new("User.CustomerRoleNotFound", "El rol 'Customer' no existe en el sistema. Contacte al administrador.");
-
     private readonly IUserRepository _userRepository;
     private readonly IRoleRepository _roleRepository;
     private readonly IUnitOfWork     _unitOfWork;
@@ -29,20 +28,32 @@ internal sealed class RegisterUserCommandHandler : ICommandHandler<RegisterUserC
         if (await _userRepository.ExistsByEmailAsync(request.Email, cancellationToken))
             return Result.Failure<int>(new Error("User.EmailAlreadyExists", $"El email '{request.Email}' ya está registrado."));
 
-        var customerRole = await _roleRepository.GetByNameAsync("Customer", cancellationToken);
-        if (customerRole is null)
-            return Result.Failure<int>(CustomerRoleNotFound);
+        var roleName = request.Role switch
+        {
+            "customer" => AppRoles.Customer,
+            "admin"    => AppRoles.Admin,
+            _          => request.Role
+        };
+
+        var roleEntity = await _roleRepository.GetByNameAsync(roleName, cancellationToken);
+        if (roleEntity is null)
+            return Result.Failure<int>(Role.Errors.NotFound);
 
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var result = User.Create(request.Name, request.Email, passwordHash, customerRole.Id);
+        var result = User.Create(request.Name, request.Email, passwordHash, roleEntity.Id);
 
         if (result.IsFailure)
             return Result.Failure<int>(result.Error);
 
-        _userRepository.Add(result.Value);
+        var user = result.Value;
+        _userRepository.Add(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result.Value.Id;
+        user.GenerateEmailVerificationCode(Random.Shared.Next(100000, 999999).ToString());
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return user.Id;
     }
 }

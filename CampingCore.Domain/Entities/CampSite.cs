@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class CampSite
+public class CampSite : Entity<int>
 {
     public static class Errors
     {
@@ -23,7 +24,6 @@ public class CampSite
 
     public const int MaxImagesPerCampSite = 20;
 
-    public int Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public decimal Latitude { get; private set; }
@@ -48,11 +48,11 @@ public class CampSite
     public ICollection<Favorite> Favorites { get; private set; } = new List<Favorite>();
     public ICollection<TripCampSite> TripCampSites { get; private set; } = new List<TripCampSite>();
 
-    protected CampSite() { }
+    protected CampSite() : base(0) { }
 
     private CampSite(string name, string? description, decimal latitude, decimal longitude,
         decimal pricePerNight, bool hasWater, bool hasElectricity, int createdByUserId,
-        int idProvincia, int idCanton, int idDistrito, string? direccionExacta)
+        int idProvincia, int idCanton, int idDistrito, string? direccionExacta) : base(0)
     {
         Name            = name;
         Description     = description;

@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Trip
+public class Trip : Entity<int>
 {
     public static class Errors
     {
@@ -12,7 +13,6 @@ public class Trip
         public static readonly Error InvalidDateRange  = Error.Validation("Trip.InvalidDateRange",  "La fecha de fin debe ser igual o posterior a la fecha de inicio.");
     }
 
-    public int Id { get; private set; }
     public int UserId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public DateOnly StartDate { get; private set; }
@@ -21,9 +21,9 @@ public class Trip
     public User? User { get; private set; }
     public ICollection<TripCampSite> CampSites { get; private set; } = new List<TripCampSite>();
 
-    protected Trip() { }
+    protected Trip() : base(0) { }
 
-    private Trip(int userId, string name, DateOnly startDate, DateOnly endDate)
+    private Trip(int userId, string name, DateOnly startDate, DateOnly endDate) : base(0)
     {
         UserId = userId;
         Name = name;

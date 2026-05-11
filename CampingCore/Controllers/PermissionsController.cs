@@ -25,6 +25,7 @@ public sealed class PermissionsController : ApiController
     /// Retorna todos los permisos.
     /// </summary>
     [HttpGet]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<PermissionResponse>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
@@ -36,8 +37,10 @@ public sealed class PermissionsController : ApiController
     /// Retorna un permiso por su ID.
     /// </summary>
     [HttpGet("{id:int}")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<PermissionResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new GetPermissionByIdQuery(id), cancellationToken);
@@ -52,8 +55,10 @@ public sealed class PermissionsController : ApiController
     /// Crea un nuevo permiso.
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Create([FromBody] CreatePermissionCommand command, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(command, cancellationToken);
@@ -68,9 +73,11 @@ public sealed class PermissionsController : ApiController
     /// Actualiza nombre y descripción de un permiso existente.
     /// </summary>
     [HttpPut("{id:int}")]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePermissionRequest request, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new UpdatePermissionCommand(id, request.Name, request.Description), cancellationToken);
@@ -85,8 +92,10 @@ public sealed class PermissionsController : ApiController
     /// Elimina un permiso por su ID.
     /// </summary>
     [HttpDelete("{id:int}")]
+    [Authorize(Roles = AppRoles.SuperUser)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var result = await Sender.Send(new DeletePermissionCommand(id), cancellationToken);

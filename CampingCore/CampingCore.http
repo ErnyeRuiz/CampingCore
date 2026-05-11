@@ -2,13 +2,15 @@
 # CampingCore API — colección HTTP (VS Code REST Client, Rider, etc.)
 # =============================================================================
 # Orden sugerido:
-#  1) Register (opcional) → 2) Login → copia los campos de la respuesta a @token
-#  3) Pega el token en @token abajo → 4) Prueba endpoints con Authorization
+#  1) Register (opcional) → 2) Verify-email con id devuelto y código del correo (opcional según flujo)
+#  3) Login → copia el JWT a @token
+#  4) Prueba endpoints con Authorization
 # =============================================================================
 # Login devuelve: userId, name, email, roleName, token (JWT con claim role + claims permission según RolePermissions).
 # Roles / Permissions CRUD: solo JWT con rol SuperUser (403 si Customer u otro sin ese rol).
 # POST/PUT/DELETE campings: además del Bearer exigen permiso create.campsite / update.campsite / delete.campsite (o rol SuperUser, que bypass). PUT/DELETE: solo dueño salvo SuperUser.
 # Registrar camping nuevo: IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
+# Dashboard público: GET /api/dashboard/camp-site-stats — total de campings + promedio de Rating (solo sitios con Rating > 0); filtros geográficos opcionales en query; sin JWT.
 # =============================================================================
 # Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
 @baseUrl  = https://localhost:7061
@@ -20,22 +22,93 @@
 @reviewId = 1
 @roleId   = 1
 @permissionId = 1
+@registeredUserId = 1
 
 ### --- Auth (público) ---------------------------------------------------------
 
-# Registro: crea usuario con rol Customer (debe existir en BD); luego login para JWT.
+# Registro: body con "role" "customer" | "admin" (requiere filas Customer y Admin en Roles). Código de verificación por correo (~15 min).
+# Respuesta 201: data incluye id — actualiza @registeredUserId o edita verify-email.
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
   "name": "Demo Usuario",
   "email": "demo@example.com",
+  "password": "Cambialo123!",
+  "role": "customer"
+}
+
+###
+
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Admin Demo",
+  "email": "admin-demo@example.com",
+  "password": "Cambialo123!",
+  "role": "admin"
+}
+
+###
+
+# Verificación de email: userId = id del registro; code = código recibido por correo (requiere IEmailService/Brevo activo).
+POST {{baseUrl}}/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "userId": {{registeredUserId}},
+  "code": "123456"
+}
+
+###
+
+# Olvido de contraseña: respuesta OK siempre; si el email existe llega código + enlace {{Frontend:BaseUrl}}/reset-password?code=...
+POST {{baseUrl}}/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "demo@example.com"
+}
+
+###
+
+# Restablecer contraseña con código del correo (6 dígitos, 15 min).
+POST {{baseUrl}}/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "code": "123456",
+  "newPassword": "OtraPass123!"
+}
+
+###
+
+# Reenvío de código de verificación: siempre 200 con el mismo mensaje (no revela si el email existe). Email con formato válido.
+POST {{baseUrl}}/api/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "demo@example.com"
+}
+
+###
+
+# Login: 401 con errorCode "User.EmailNotVerified", mensaje y data.userId (credenciales correctas, email sin verificar).
+# Tras verificar, admin nuevo: 401 con errorCode "User.AdminAccountNotReady" y mensaje con segundos hasta activación (CreatedAt + AdminSettings:ActivationDelayHours).
+# Para probar login admin sin esperar 24h, pon ActivationDelayHours en 0 en appsettings.Development.json y reinicia la API.
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin-demo@example.com",
   "password": "Cambialo123!"
 }
 
 ###
 
-# Login: body con email y password. Respuesta: userId, name, email, roleName, token.
+# Login customer: tras verify-email debería devolver 200 + JWT (mismas reglas de errorCode en el cuerpo si falla).
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -67,6 +140,26 @@ GET {{baseUrl}}/api/ubicacion/provincias/1/cantones
 
 # Distritos filtrados por cantón (sustituir por id válido desde cantones).
 GET {{baseUrl}}/api/ubicacion/cantones/1/distritos
+
+###
+
+### --- Dashboard (público) — métricas agregadas para paneles --------------------
+# Sin Authorization. Respuesta 200: envelope ApiResponse con data.totalCount y data.averageRating.
+# averageRating es null cuando ningún camping del conjunto filtrado tiene Rating > 0.
+# Query opcionales (AND si se combinan): idProvincia, idCanton, idDistrito (ids > 0; 400 si envías 0 o negativo).
+
+# Totales globales (todos los campings en BD).
+GET {{baseUrl}}/api/dashboard/camp-site-stats
+
+###
+
+# Solo provincia (sustituir por id desde /api/ubicacion/provincias).
+GET {{baseUrl}}/api/dashboard/camp-site-stats?idProvincia=1
+
+###
+
+# Provincia + cantón + distrito (ids coherentes con /api/ubicacion/…).
+GET {{baseUrl}}/api/dashboard/camp-site-stats?idProvincia=1&idCanton=1&idDistrito=1
 
 ###
 

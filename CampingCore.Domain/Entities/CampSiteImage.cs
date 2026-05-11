@@ -1,8 +1,9 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class CampSiteImage
+public class CampSiteImage : Entity<int>
 {
     public const int MaxBase64Length = 12_000_000;
 
@@ -13,15 +14,14 @@ public class CampSiteImage
         public static readonly Error ImageBase64TooLong   = Error.Validation("CampSiteImage.ImageBase64TooLong",   "La imagen supera el tamaño máximo permitido.");
     }
 
-    public int Id { get; private set; }
     public int CampSiteId { get; private set; }
     public string ImageBase64 { get; private set; } = string.Empty;
 
     public CampSite? CampSite { get; private set; }
 
-    protected CampSiteImage() { }
+    protected CampSiteImage() : base(0) { }
 
-    private CampSiteImage(int campSiteId, string imageBase64)
+    private CampSiteImage(int campSiteId, string imageBase64) : base(0)
     {
         CampSiteId   = campSiteId;
         ImageBase64  = imageBase64;

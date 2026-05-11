@@ -21,17 +21,26 @@ public class Result
     public static Result Success() => new(true, Error.None);
     public static Result Failure(Error error) => new(false, error);
     public static Result<TValue> Success<TValue>(TValue value) => new(value, true, Error.None);
-    public static Result<TValue> Failure<TValue>(Error error) => new(default, false, error);
+    public static Result<TValue> Failure<TValue>(Error error) => new(default, false, error, null);
+
+    public static Result<TValue> Failure<TValue>(Error error, object? failureData) =>
+        new(default, false, error, failureData);
 }
 
 public sealed class Result<TValue> : Result
 {
     private readonly TValue? _value;
 
-    internal Result(TValue? value, bool isSuccess, Error error) : base(isSuccess, error)
+    internal Result(TValue? value, bool isSuccess, Error error, object? failureData = null) : base(isSuccess, error)
     {
         _value = value;
+        FailureData = failureData;
     }
+
+    /// <summary>
+    /// Payload opcional cuando <see cref="Result.IsFailure"/> (p. ej. metadatos para el cliente).
+    /// </summary>
+    public object? FailureData { get; }
 
     public TValue Value => IsSuccess
         ? _value!

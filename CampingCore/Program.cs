@@ -6,6 +6,26 @@ using CampingCore.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 
+static string[] ResolveCorsOrigins(IConfiguration configuration, IHostEnvironment environment)
+{
+    var frontend = configuration["Frontend:BaseUrl"]
+        ?.Trim()
+        .TrimEnd('/', ' ');
+
+    if (string.IsNullOrEmpty(frontend))
+        throw new InvalidOperationException(
+            "Configura Frontend:BaseUrl con la URL pública del Angular (sin barra final). " +
+            "Desarrollo: appsettings.Development.json. Producción / hosting: variable de entorno Frontend__BaseUrl. " +
+            $"Entorno actual: {environment.EnvironmentName}.");
+    
+
+    if (!Uri.TryCreate(frontend, UriKind.Absolute, out _))
+        throw new InvalidOperationException($"Frontend:BaseUrl no es una URL válida: '{frontend}'");
+
+
+    return [frontend];
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
@@ -32,7 +52,7 @@ builder.Services.AddSwaggerGen(options =>
 
             **Ubicación (Costa Rica):** `GET /api/ubicacion/…` expone provincias, cantones y distritos para rellenar `IdProvincia`, `IdCanton`, `IdDistrito` al crear o editar un camping.
 
-            **Autenticación:** muchas rutas exigen JWT. Registro: `POST /api/auth/register` asigna el rol `Customer` si existe en base de datos; luego `POST /api/auth/login`. El cuerpo de login incluye `userId`, `name`, `email`, `roleName` y `token`. Pulsa *Authorize* y usa `Bearer {token}`. Los claims incluyen `sub` (id de usuario), rol (`role`/`ClaimTypes.Role`) y uno o más claims `permission` con el nombre del permiso.
+            **Autenticación:** muchas rutas exigen JWT. Registro: `POST /api/auth/register` asigna el rol `Customer` si existe en base de datos y genera un código de verificación enviado al email (`POST /api/auth/verify-email` con `userId` y `code` cuando el proveedor de correo está configurado). Después `POST /api/auth/login`. El cuerpo de login incluye `userId`, `name`, `email`, `roleName` y `token`. Pulsa *Authorize* y usa `Bearer {token}`. Los claims incluyen `sub` (id de usuario), rol (`role`/`ClaimTypes.Role`) y uno o más claims `permission` con el nombre del permiso.
 
             **Autorización por permiso:** crear/editar/eliminar campings (`POST`/`PUT`/`DELETE /api/campsites`) exigen políticas `Permission:create.campsite`, `Permission:update.campsite` y `Permission:delete.campsite` (claim `permission` en el JWT). El rol `SuperUser` satisface cualquier política `Permission:…` sin necesidad de esos claims.
 
@@ -44,7 +64,7 @@ builder.Services.AddSwaggerGen(options =>
 
             **Convención de rutas:** prefijo `api/…`. Donde aplique, el usuario se infiere del claim `sub` del token.
 
-            **Campings:** listado público `GET /api/campsites`; gestión `GET /api/campsites/managed` exige JWT y rol `Admin` o `SuperUser` (Admin ve solo los que creó; SuperUser ve todos). `POST` y `PUT` `/api/campsites` usan `multipart/form-data` (campos del sitio + archivos `images`; en `PUT`, `imageIdsToKeep` repetido por cada id de imagen existente que se conserve).
+            **Campings:** listado público `GET /api/campsites`; gestión `GET /api/campsites/managed` exige JWT y rol `Admin` o `SuperUser` (Admin ve solo los que creó; SuperUser ve todos). `POST` y `PUT` `/api/campsites` usan `multipart/form-data` (campos del sitio + archivos `images`; en `PUT`, `imageIdsToKeep` repetido por cada id de imagen existente que se conserve). Estadísticas públicas del dashboard: `GET /api/dashboard/camp-site-stats` (`idProvincia`, `idCanton`, `idDistrito` opcionales como query).
 
             **Swagger en no-desarrollo:** se puede activar con la clave de configuración `EnableSwagger: true` en `appsettings` (útil en demos; no se recomienda en producción pública sin autenticación adicional en el propio endpoint de documentación).
             """,
@@ -88,13 +108,14 @@ builder.Services.AddProblemDetails();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+var corsOrigins = ResolveCorsOrigins(builder.Configuration, builder.Environment);
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAngular",
-
+    options.AddPolicy(
+        "AllowAngular",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(corsOrigins)
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
@@ -115,6 +136,8 @@ if (showSwagger)
         c.DisplayRequestDuration();
     });
 }
+
+app.UseStaticFiles();
 
 app.UseExceptionHandler();
 

@@ -4,6 +4,7 @@ using CampingCore.Domain.Primitives;
 using CampingCore.Domain.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace CampingCore.Infrastructure.Persistence;
 
@@ -61,22 +62,19 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        // Recolecta los domain events de las entidades AggregateRoot antes de persistir,
-        // de modo que los eventos se publiquen después del commit exitoso.
-        var domainEvents = ChangeTracker.Entries<AggregateRoot>()
+        var aggregates = ChangeTracker.Entries<AggregateRoot<int>>()
             .Select(e => e.Entity)
             .Where(e => e.GetDomainEvents().Count != 0)
-            .SelectMany(e =>
-            {
-                var events = e.GetDomainEvents();
-                e.ClearDomainEvents();
-                return events; 
-            })
             .ToList();
+
+        var domainEvents = aggregates
+            .SelectMany(e => e.GetDomainEvents())
+            .ToList();
+
+        aggregates.ForEach(e => e.ClearDomainEvents());
 
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        // Publica los eventos de dominio
         foreach (var domainEvent in domainEvents)
         {
             if (domainEvent is INotification notification)

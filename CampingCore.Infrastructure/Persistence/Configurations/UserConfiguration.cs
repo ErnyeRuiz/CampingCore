@@ -34,6 +34,15 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.RoleId)
             .IsRequired();
 
+        builder.Property(u => u.IsEmailVerified)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(u => u.EmailVerificationCode)
+            .HasMaxLength(255);
+
+        builder.Property(u => u.EmailVerificationCodeExpiresAt);
+
         builder.HasOne(u => u.Role)
             .WithMany()
             .HasForeignKey(u => u.RoleId)
