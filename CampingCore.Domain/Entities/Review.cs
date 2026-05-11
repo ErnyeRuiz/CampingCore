@@ -1,9 +1,10 @@
 using CampingCore.Domain.Common;
+using CampingCore.Domain.Events;
 using CampingCore.Domain.Primitives;
 
 namespace CampingCore.Domain.Entities;
 
-public class Review : Entity<int>
+public class Review : AggregateRoot<int>
 {
     public static class Errors
     {
@@ -38,7 +39,9 @@ public class Review : Entity<int>
         if (campSiteId <= 0)          return Result.Failure<Review>(Errors.InvalidCampSiteId);
         if (rating < 1 || rating > 5) return Result.Failure<Review>(Errors.RatingOutOfRange);
 
-        return new Review(userId, campSiteId, rating, comment);
+        var review = new Review(userId, campSiteId, rating, comment);
+        review.RaiseCampSiteRatingRecalculationRequested();
+        return review;
     }
 
     public Result Update(byte rating, string? comment)
@@ -48,6 +51,16 @@ public class Review : Entity<int>
         Rating  = rating;
         Comment = comment;
 
+        RaiseCampSiteRatingRecalculationRequested();
         return Result.Success();
     }
+
+    public void NotifyCampSiteRatingMayHaveChanged()
+        => RaiseCampSiteRatingRecalculationRequested();
+
+    private void RaiseCampSiteRatingRecalculationRequested()
+        => RaiseDomainEvent(new CampSiteRatingRecalculationRequestedDomainEvent(
+            Guid.NewGuid(),
+            DateTime.UtcNow,
+            CampSiteId));
 }

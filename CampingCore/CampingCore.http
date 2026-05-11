@@ -10,6 +10,7 @@
 # Roles / Permissions CRUD: solo JWT con rol SuperUser (403 si Customer u otro sin ese rol).
 # POST/PUT/DELETE campings: además del Bearer exigen permiso create.campsite / update.campsite / delete.campsite (o rol SuperUser, que bypass). PUT/DELETE: solo dueño salvo SuperUser.
 # Registrar camping nuevo: IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
+# Dashboard público: GET /api/dashboard/camp-site-stats — total de campings + promedio de Rating (solo sitios con Rating > 0); filtros geográficos opcionales en query; sin JWT.
 # =============================================================================
 # Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
 @baseUrl  = https://localhost:7061
@@ -139,6 +140,26 @@ GET {{baseUrl}}/api/ubicacion/provincias/1/cantones
 
 # Distritos filtrados por cantón (sustituir por id válido desde cantones).
 GET {{baseUrl}}/api/ubicacion/cantones/1/distritos
+
+###
+
+### --- Dashboard (público) — métricas agregadas para paneles --------------------
+# Sin Authorization. Respuesta 200: envelope ApiResponse con data.totalCount y data.averageRating.
+# averageRating es null cuando ningún camping del conjunto filtrado tiene Rating > 0.
+# Query opcionales (AND si se combinan): idProvincia, idCanton, idDistrito (ids > 0; 400 si envías 0 o negativo).
+
+# Totales globales (todos los campings en BD).
+GET {{baseUrl}}/api/dashboard/camp-site-stats
+
+###
+
+# Solo provincia (sustituir por id desde /api/ubicacion/provincias).
+GET {{baseUrl}}/api/dashboard/camp-site-stats?idProvincia=1
+
+###
+
+# Provincia + cantón + distrito (ids coherentes con /api/ubicacion/…).
+GET {{baseUrl}}/api/dashboard/camp-site-stats?idProvincia=1&idCanton=1&idDistrito=1
 
 ###
 

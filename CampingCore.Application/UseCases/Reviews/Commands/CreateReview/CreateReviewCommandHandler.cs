@@ -40,8 +40,6 @@ internal sealed class CreateReviewCommandHandler : ICommandHandler<CreateReviewC
         _reviewRepository.Add(result.Value);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await _campSiteRepository.RecalculateCampSiteRatingAsync(request.CampSiteId, cancellationToken);
-
         return result.Value.Id;
     }
 }

@@ -10,18 +10,15 @@ internal sealed class DeleteReviewCommandHandler : ICommandHandler<DeleteReviewC
     private static readonly Error Forbidden =
         new("Review.Forbidden", "No tienes permiso para eliminar esta reseña.");
 
-    private readonly IReviewRepository  _reviewRepository;
-    private readonly ICampSiteRepository _campSiteRepository;
-    private readonly IUnitOfWork        _unitOfWork;
+    private readonly IReviewRepository _reviewRepository;
+    private readonly IUnitOfWork       _unitOfWork;
 
     public DeleteReviewCommandHandler(
         IReviewRepository reviewRepository,
-        ICampSiteRepository campSiteRepository,
         IUnitOfWork unitOfWork)
     {
-        _reviewRepository   = reviewRepository;
-        _campSiteRepository = campSiteRepository;
-        _unitOfWork         = unitOfWork;
+        _reviewRepository = reviewRepository;
+        _unitOfWork       = unitOfWork;
     }
 
     public async Task<Result> Handle(DeleteReviewCommand request, CancellationToken cancellationToken)
@@ -34,12 +31,10 @@ internal sealed class DeleteReviewCommandHandler : ICommandHandler<DeleteReviewC
         if (review.UserId != request.RequestingUserId)
             return Result.Failure(Forbidden);
 
-        var campSiteId = review.CampSiteId;
+        review.NotifyCampSiteRatingMayHaveChanged();
 
         _reviewRepository.Remove(review);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        await _campSiteRepository.RecalculateCampSiteRatingAsync(campSiteId, cancellationToken);
 
         return Result.Success();
     }

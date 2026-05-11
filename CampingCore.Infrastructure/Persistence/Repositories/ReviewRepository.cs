@@ -10,6 +10,7 @@ internal sealed class ReviewRepository : Repository<Review, int>, IReviewReposit
 
     public async Task<IReadOnlyList<Review>> GetByCampSiteIdAsync(int campSiteId, CancellationToken cancellationToken = default)
         => await Context.Reviews
+            .Include(r => r.User)
             .Where(r => r.CampSiteId == campSiteId)
             .ToListAsync(cancellationToken);
 }

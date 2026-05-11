@@ -1,5 +1,4 @@
 using CampingCore.Domain.Entities;
-using CampingCore.Domain.Primitives;
 using CampingCore.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,5 +38,30 @@ internal sealed class CampSiteRepository : Repository<CampSite, int>, ICampSiteR
             .ExecuteUpdateAsync(
                 s => s.SetProperty(c => c.Rating, Math.Round(avg, 2)),
                 cancellationToken);
+    }
+
+    public async Task<(int TotalCount, decimal? AverageRating)> GetStatsAsync(
+        int? idProvincia,
+        int? idCanton,
+        int? idDistrito,
+        CancellationToken cancellationToken = default)
+    {
+        var query = Context.Set<CampSite>().AsQueryable();
+
+        if (idProvincia is { } p)
+            query = query.Where(c => c.IdProvincia == p);
+        if (idCanton is { } ca)
+            query = query.Where(c => c.IdCanton == ca);
+        if (idDistrito is { } d)
+            query = query.Where(c => c.IdDistrito == d);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var avg = await query
+            .Where(c => c.Rating > 0)
+            .AverageAsync(c => (decimal?)c.Rating, cancellationToken);
+
+        decimal? averageRating = avg.HasValue ? Math.Round(avg.Value, 2) : null;
+
+        return (totalCount, averageRating);
     }
 }
