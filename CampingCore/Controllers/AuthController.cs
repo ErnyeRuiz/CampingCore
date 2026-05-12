@@ -1,4 +1,6 @@
 using CampingCore.Application.UseCases.Auth.ForgotPassword;
+using CampingCore.Application.UseCases.Auth.Logout;
+using CampingCore.Application.UseCases.Auth.RefreshSession;
 using CampingCore.Application.UseCases.Auth.ResetPassword;
 using CampingCore.Application.UseCases.Auth.VerifyEmail;
 using CampingCore.Application.UseCases.Auth.ResendVerificationEmail;
@@ -13,7 +15,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace CampingCore.Controllers;
 
 /// <summary>
-/// Registro e inicio de sesión. Devuelve JWT en login para usar en <c>Authorization: Bearer {token}</c>.
+/// Registro e inicio de sesión. Login devuelve JWT de acceso (<c>token</c>) y <c>refreshToken</c> opaco para <c>POST /api/auth/refresh</c>.
+/// Las llamadas API autenticadas usan <c>Authorization: Bearer {token}</c>.
 /// </summary>
 [Route("api/auth")]
 public sealed class AuthController : ApiController
@@ -98,7 +101,7 @@ public sealed class AuthController : ApiController
     }
 
     /// <summary>
-    /// Autentica por email y contraseña. Cuerpo de éxito: <c>userId</c>, <c>name</c>, <c>email</c>, <c>roleName</c> y <c>token</c> JWT (con rol y claims <c>permission</c> si aplica).
+    /// Autentica por email y contraseña. Éxito: <c>userId</c>, <c>name</c>, <c>email</c>, <c>roleName</c>, <c>token</c> (JWT de acceso) y <c>refreshToken</c> (guardar para renovar sesión).
     /// </summary>
     /// <param name="command">Cuerpo con <c>email</c> y <c>password</c>.</param>
     /// <param name="cancellationToken">Token de cancelación.</param>
@@ -125,6 +128,48 @@ public sealed class AuthController : ApiController
         }
 
         return OkResponse(result.Value);
+    }
+
+    /// <summary>
+    /// Renueva el JWT de acceso y rota el refresh. Body: <c>{ "refreshToken": "..." }</c>.
+    /// Tras el tiempo configurado en <c>JwtSettings:RefreshIdleTimeoutDays</c> sin uso, devuelve <c>401</c> (<c>Auth.RefreshSessionIdleExpired</c>). Clientes SPA/PWA suelen llamar esto ante <c>401</c> por token caduco o al volver la app al primer plano.
+    /// </summary>
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshSessionCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return StatusCode(
+                StatusCodes.Status401Unauthorized,
+                ApiResponse.Fail(401, result.Error.Description, result.Error.Code, null));
+        }
+
+        return OkResponse(result.Value);
+    }
+
+    /// <summary>
+    /// Cierra la sesión del refresh actual (revoca el token opaco). Body: <c>{ "refreshToken": "..." }</c>.
+    /// </summary>
+    [HttpPost("logout")]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(
+        [FromBody] LogoutCommand command,
+        CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+            return MapErrorResponse(result.Error);
+
+        return SuccessResponse("Sesión cerrada.");
     }
 
     /// <summary>

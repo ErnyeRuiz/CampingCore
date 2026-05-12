@@ -1,6 +1,6 @@
 using CampingCore.Application.Email;
-using CampingCore.Application.Options;
 using CampingCore.Application.Abstractions.Authentication;
+using CampingCore.Application.Options;
 using CampingCore.Application.Abstractions.Geo;
 using CampingCore.Application.Abstractions.Security;
 using CampingCore.Domain.Repositories;
@@ -74,7 +74,10 @@ public static class DependencyInjection
 
         services.Configure<AdminSettings>(configuration.GetSection(AdminSettings.SectionName));
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.Configure<SessionAuthSettings>(configuration.GetSection(SessionAuthSettings.SectionName));
+        services.AddSingleton<IRefreshTokenSecretService, RefreshTokenSecretService>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUserService>();
