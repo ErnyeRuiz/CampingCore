@@ -9,12 +9,17 @@ namespace CampingCore.Application.UseCases.Auth.ResetPassword;
 internal sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswordCommand>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokens;
     private readonly IUnitOfWork _unitOfWork;
 
-    public ResetPasswordCommandHandler(IUserRepository userRepository, IUnitOfWork unitOfWork)
+    public ResetPasswordCommandHandler(
+        IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokens,
+        IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
-        _unitOfWork = unitOfWork;
+        _refreshTokens  = refreshTokens;
+        _unitOfWork     = unitOfWork;
     }
 
     public async Task<Result> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
@@ -37,6 +42,11 @@ internal sealed class ResetPasswordCommandHandler : ICommandHandler<ResetPasswor
 
         if (reset.IsFailure)
             return reset;
+
+        var utcNow = DateTime.UtcNow;
+        var sessions = await _refreshTokens.GetActiveByUserIdAsync(user.Id, cancellationToken);
+        foreach (var session in sessions)
+            session.Revoke(utcNow);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

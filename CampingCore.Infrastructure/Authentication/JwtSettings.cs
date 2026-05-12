@@ -8,4 +8,7 @@ public sealed class JwtSettings
     public string Issuer        { get; init; } = string.Empty;
     public string Audience      { get; init; } = string.Empty;
     public int    ExpiryMinutes { get; init; } = 60;
+
+    /// <summary>Días sin renovación antes de invalidar la sesión.</summary>
+    public int RefreshIdleTimeoutDays { get; init; } = 30;
 }

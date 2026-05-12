@@ -14,17 +14,26 @@ internal sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginR
     private static readonly Error InvalidCredentials =
         new("Auth.InvalidCredentials", "El email o la contraseña son incorrectos.");
 
-    private readonly IUserRepository _userRepository;
-    private readonly ITokenService   _tokenService;
-    private readonly AdminSettings   _adminSettings;
+    private readonly IUserRepository             _userRepository;
+    private readonly ITokenService               _tokenService;
+    private readonly IRefreshTokenRepository    _refreshTokens;
+    private readonly IRefreshTokenSecretService _secrets;
+    private readonly IUnitOfWork                _unitOfWork;
+    private readonly AdminSettings               _adminSettings;
 
     public LoginCommandHandler(
         IUserRepository userRepository,
         ITokenService tokenService,
+        IRefreshTokenRepository refreshTokens,
+        IRefreshTokenSecretService secrets,
+        IUnitOfWork unitOfWork,
         IOptions<AdminSettings> adminSettings)
     {
         _userRepository = userRepository;
         _tokenService   = tokenService;
+        _refreshTokens  = refreshTokens;
+        _secrets        = secrets;
+        _unitOfWork     = unitOfWork;
         _adminSettings  = adminSettings.Value;
     }
 
@@ -50,8 +59,15 @@ internal sealed class LoginCommandHandler : ICommandHandler<LoginCommand, LoginR
             }
         }
 
-        var token = _tokenService.GenerateToken(user);
+        var utcNow       = DateTime.UtcNow;
+        var accessToken  = _tokenService.GenerateToken(user);
+        var plainRefresh = _secrets.GeneratePlainToken();
+        var refreshHash  = _secrets.ComputeHash(plainRefresh);
+        var refreshRow   = RefreshToken.Create(user.Id, refreshHash, utcNow);
 
-        return new LoginResponse(user.Id, user.Name, user.Email, user.Role?.Name, token);
+        _refreshTokens.Add(refreshRow);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new LoginResponse(user.Id, user.Name, user.Email, user.Role?.Name, accessToken, plainRefresh);
     }
 }

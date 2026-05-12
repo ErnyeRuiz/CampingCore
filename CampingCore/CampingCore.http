@@ -3,10 +3,14 @@
 # =============================================================================
 # Orden sugerido:
 #  1) Register (opcional) → 2) Verify-email con id devuelto y código del correo (opcional según flujo)
-#  3) Login → copia el JWT a @token
-#  4) Prueba endpoints con Authorization
+#  3) Login → copia data.token a @token y data.refreshToken a @refreshToken (rotación: tras cada refresh usa el nuevo refresh)
+#  4) Si el JWT caduca (401): POST /api/auth/refresh con el último refreshToken → nuevos token + refreshToken
+#  5) Logout opcional: POST /api/auth/logout revoca el refresh en servidor
+#  6) Prueba endpoints con Authorization: Bearer {{token}}
 # =============================================================================
-# Login devuelve: userId, name, email, roleName, token (JWT con claim role + claims permission según RolePermissions).
+# Login / refresh exitoso devuelven en data: userId, name, email, roleName, token (JWT con role + claims permission),
+# refreshToken (opaco; no es JWT). JwtSettings:ExpiryMinutes = vida del access token; RefreshIdleTimeoutDays = días sin
+# renovar antes de 401 con errorCode Auth.RefreshSessionIdleExpired o Auth.InvalidRefreshSession.
 # Roles / Permissions CRUD: solo JWT con rol SuperUser (403 si Customer u otro sin ese rol).
 # POST/PUT/DELETE campings: además del Bearer exigen permiso create.campsite / update.campsite / delete.campsite (o rol SuperUser, que bypass). PUT/DELETE: solo dueño salvo SuperUser.
 # Registrar camping nuevo: IdProvincia, IdCanton, IdDistrito desde /api/ubicacion primero.
@@ -15,7 +19,8 @@
 # Ajusta la base URL según launchSettings: perfil "https" usa 7061 / 5106
 @baseUrl  = https://localhost:7061
 @baseHttp = http://localhost:5106
-@token    = reemplaza_con_jwt_de_login
+@token         = reemplaza_con_jwt_de_login
+@refreshToken  = reemplaza_con_refresh_opaco_de_login_o_refresh
 @id       = 1
 @tripId   = 1
 @csId     = 1
@@ -98,6 +103,7 @@ Content-Type: application/json
 # Login: 401 con errorCode "User.EmailNotVerified", mensaje y data.userId (credenciales correctas, email sin verificar).
 # Tras verificar, admin nuevo: 401 con errorCode "User.AdminAccountNotReady" y mensaje con segundos hasta activación (CreatedAt + AdminSettings:ActivationDelayHours).
 # Para probar login admin sin esperar 24h, pon ActivationDelayHours en 0 en appsettings.Development.json y reinicia la API.
+# 200: data incluye token (JWT) + refreshToken — pega refreshToken en @refreshToken arriba para las peticiones siguientes.
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
@@ -108,13 +114,34 @@ Content-Type: application/json
 
 ###
 
-# Login customer: tras verify-email debería devolver 200 + JWT (mismas reglas de errorCode en el cuerpo si falla).
+# Login customer: tras verify-email debería devolver 200 + JWT + refreshToken en data (mismas reglas de errorCode si falla).
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
   "email": "demo@example.com",
   "password": "Cambialo123!"
+}
+
+###
+
+# Renovar sesión sin volver a password. Body: último refreshToken (el anterior queda revocado en BD; guarda los nuevos token + refreshToken de la respuesta).
+# 401: Auth.InvalidRefreshSession | Auth.RefreshSessionIdleExpired (sesión caduca por inactividad) — vuelve a login.
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+# Revoca el refresh opaco en servidor. El cliente debe borrar token + refresh en almacenamiento local.
+POST {{baseUrl}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
 }
 
 ###

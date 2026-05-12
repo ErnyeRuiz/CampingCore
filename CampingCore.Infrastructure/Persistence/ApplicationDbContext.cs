@@ -28,6 +28,7 @@ public sealed class ApplicationDbContext : DbContext, IUnitOfWork
     public DbSet<Favorite>       Favorites       { get; set; }
     public DbSet<Trip>           Trips           { get; set; }
     public DbSet<TripCampSite>   TripCampSites   { get; set; }
+    public DbSet<RefreshToken>   RefreshTokens   { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
