@@ -1,10 +1,11 @@
-using CampingCore.Domain.Entities;
 using FluentValidation;
 
 namespace CampingCore.Application.CampSites;
 
 internal sealed class ImageFileDtoValidator : AbstractValidator<ImageFileDto>
 {
+    private const int MaxFileSizeBytes = 10_000_000; // 10 MB
+
     private static readonly HashSet<string> AllowedContentTypes =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -17,10 +18,10 @@ internal sealed class ImageFileDtoValidator : AbstractValidator<ImageFileDto>
 
     public ImageFileDtoValidator()
     {
-        RuleFor(x => x.Base64)
-            .NotEmpty().WithMessage("El contenido de la imagen no puede estar vacío.")
-            .MaximumLength(CampSiteImage.MaxBase64Length)
-            .WithMessage("La imagen supera el tamaño máximo permitido.");
+        RuleFor(x => x.Bytes)
+            .NotNull().NotEmpty().WithMessage("El contenido de la imagen no puede estar vacío.")
+            .Must(b => b.Length <= MaxFileSizeBytes)
+            .WithMessage("La imagen supera el tamaño máximo de 10 MB.");
 
         RuleFor(x => x.ContentType)
             .Must(ct =>

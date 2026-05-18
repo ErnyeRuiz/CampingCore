@@ -5,34 +5,30 @@ namespace CampingCore.Domain.Entities;
 
 public class CampSiteImage : Entity<int>
 {
-    public const int MaxBase64Length = 12_000_000;
-
     public static class Errors
     {
-        public static readonly Error InvalidCampSiteId    = Error.Validation("CampSiteImage.InvalidCampSiteId",    "El identificador del sitio de camping debe ser mayor a 0.");
-        public static readonly Error ImageBase64Required  = Error.Validation("CampSiteImage.ImageBase64Required",  "La imagen en base64 es obligatoria.");
-        public static readonly Error ImageBase64TooLong   = Error.Validation("CampSiteImage.ImageBase64TooLong",   "La imagen supera el tamaño máximo permitido.");
+        public static readonly Error InvalidCampSiteId = Error.Validation("CampSiteImage.InvalidCampSiteId", "El identificador del sitio de camping debe ser mayor a 0.");
+        public static readonly Error ImageUrlRequired  = Error.Validation("CampSiteImage.ImageUrlRequired",  "La URL de la imagen es obligatoria.");
     }
 
-    public int CampSiteId { get; private set; }
-    public string ImageBase64 { get; private set; } = string.Empty;
+    public int    CampSiteId { get; private set; }
+    public string ImageUrl   { get; private set; } = string.Empty;
 
     public CampSite? CampSite { get; private set; }
 
     protected CampSiteImage() : base(0) { }
 
-    private CampSiteImage(int campSiteId, string imageBase64) : base(0)
+    private CampSiteImage(int campSiteId, string imageUrl) : base(0)
     {
-        CampSiteId   = campSiteId;
-        ImageBase64  = imageBase64;
+        CampSiteId = campSiteId;
+        ImageUrl   = imageUrl;
     }
 
-    public static Result<CampSiteImage> Create(int campSiteId, string imageBase64)
+    public static Result<CampSiteImage> CreateWithUrl(int campSiteId, string imageUrl)
     {
-        if (campSiteId <= 0)                           return Result.Failure<CampSiteImage>(Errors.InvalidCampSiteId);
-        if (string.IsNullOrWhiteSpace(imageBase64))    return Result.Failure<CampSiteImage>(Errors.ImageBase64Required);
-        if (imageBase64.Length > MaxBase64Length)      return Result.Failure<CampSiteImage>(Errors.ImageBase64TooLong);
+        if (campSiteId <= 0)                      return Result.Failure<CampSiteImage>(Errors.InvalidCampSiteId);
+        if (string.IsNullOrWhiteSpace(imageUrl))  return Result.Failure<CampSiteImage>(Errors.ImageUrlRequired);
 
-        return new CampSiteImage(campSiteId, imageBase64);
+        return new CampSiteImage(campSiteId, imageUrl);
     }
 }

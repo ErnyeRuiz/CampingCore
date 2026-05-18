@@ -29,6 +29,6 @@ internal sealed class TripProfile : Profile
                 src.IdProvincia,
                 src.IdCanton,
                 src.IdDistrito,
-                src.Images.OrderBy(i => i.Id).Select(i => i.ImageBase64).FirstOrDefault()));
+                src.Images.OrderBy(i => i.Id).Select(i => i.ImageUrl).FirstOrDefault()));
     }
 }

@@ -1,6 +1,6 @@
 namespace CampingCore.Application.CampSites;
 
 /// <summary>
-/// Imagen recibida en un comando (p. ej. mapeada desde multipart en el API). Sin tipos de ASP.NET Core.
+/// Imagen recibida en un comando.
 /// </summary>
-public sealed record ImageFileDto(string Base64, string? ContentType, string? FileName);
+public sealed record ImageFileDto(byte[] Bytes, string? ContentType, string? FileName);
