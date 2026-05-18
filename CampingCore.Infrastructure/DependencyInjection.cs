@@ -1,4 +1,6 @@
+using CampingCore.Application.Abstractions.Storage;
 using CampingCore.Application.Email;
+
 using CampingCore.Application.Abstractions.Authentication;
 using CampingCore.Application.Options;
 using CampingCore.Application.Abstractions.Geo;
@@ -9,6 +11,7 @@ using CampingCore.Infrastructure.Email;
 using CampingCore.Infrastructure.ExternalServices;
 using CampingCore.Infrastructure.Persistence;
 using CampingCore.Infrastructure.Persistence.Repositories;
+using CampingCore.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -78,6 +81,9 @@ public static class DependencyInjection
         services.AddSingleton<IRefreshTokenSecretService, RefreshTokenSecretService>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+        services.Configure<R2StorageSettings>(configuration.GetSection(R2StorageSettings.SectionName));
+        services.AddSingleton<IR2StorageService, R2StorageService>();
 
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUser, CurrentUserService>();

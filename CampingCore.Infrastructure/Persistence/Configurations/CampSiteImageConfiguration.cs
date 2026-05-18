@@ -1,6 +1,6 @@
 using CampingCore.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore;
 
 namespace CampingCore.Infrastructure.Persistence.Configurations;
 
@@ -12,8 +12,8 @@ internal sealed class CampSiteImageConfiguration : IEntityTypeConfiguration<Camp
 
         builder.HasKey(i => i.Id);
 
-        builder.Property(i => i.ImageBase64)
+        builder.Property(i => i.ImageUrl)
             .IsRequired()
-            .HasColumnType("nvarchar(MAX)");
+            .HasMaxLength(2083);
     }
 }

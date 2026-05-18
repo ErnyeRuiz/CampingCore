@@ -19,8 +19,7 @@ internal static class CampSiteImageFormMapper
 
             await using var ms = new MemoryStream();
             await file.CopyToAsync(ms, cancellationToken);
-            var base64 = Convert.ToBase64String(ms.ToArray());
-            list.Add(new ImageFileDto(base64, file.ContentType, file.FileName));
+            list.Add(new ImageFileDto(ms.ToArray(), file.ContentType, file.FileName));
         }
 
         return list;

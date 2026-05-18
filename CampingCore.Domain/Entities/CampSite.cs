@@ -117,10 +117,10 @@ public class CampSite : Entity<int>
 
     /// <summary>
     /// Reemplaza el álbum de imágenes: conserva las indicadas en <paramref name="imageIdsToKeep"/>
-    /// (vacío o <c>null</c> = no conservar ninguna existente) y añade <paramref name="newImageBase64Values"/>.
+    /// (vacío o <c>null</c> = no conservar ninguna existente) y añade <paramref name="newImageUrls"/>.
     /// Requiere <see cref="Id"/> mayor que cero (sitio ya persistido).
     /// </summary>
-    public Result ReplaceImages(IReadOnlyCollection<int>? imageIdsToKeep, IReadOnlyList<string> newImageBase64Values)
+    public Result ReplaceImages(IReadOnlyCollection<int>? imageIdsToKeep, IReadOnlyList<string> newImageUrls)
     {
         if (Id <= 0)
             return Result.Failure(Errors.NotPersisted);
@@ -139,16 +139,16 @@ public class CampSite : Entity<int>
                 return Result.Failure(Errors.InvalidImageIdToKeep);
         }
 
-        if (keep.Count + newImageBase64Values.Count > MaxImagesPerCampSite)
+        if (keep.Count + newImageUrls.Count > MaxImagesPerCampSite)
             return Result.Failure(Errors.TooManyImages);
 
         var toRemove = Images.Where(i => !keep.Contains(i.Id)).ToList();
         foreach (var img in toRemove)
             Images.Remove(img);
 
-        foreach (var b64 in newImageBase64Values)
+        foreach (var url in newImageUrls)
         {
-            var created = CampSiteImage.Create(Id, b64);
+            var created = CampSiteImage.CreateWithUrl(Id, url);
             if (created.IsFailure)
                 return Result.Failure(created.Error);
 
